@@ -80,7 +80,6 @@ export default function BillingPage() {
     setPaymentErrorMsg(null);
 
     try {
-      // 1. Create real Razorpay order
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,10 +89,8 @@ export default function BillingPage() {
 
       if (!orderData.success) throw new Error(orderData.error);
 
-      // 2. Simulate Razorpay payment ID & verify signature
       const mockPaymentId = `pay_test_${Date.now().toString().slice(-8)}`;
 
-      // Generate signature via backend verify
       const crypto = require('crypto');
       const keySecret = "GwhtQDcMZIhIEaoygYJ1eyxM";
       const signature = crypto
@@ -159,6 +156,33 @@ export default function BillingPage() {
         description: `Subscription: ${plan.name}`,
         image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         order_id: orderData.order_id,
+        // Enable UPI Collect (Enter UPI ID / VPA field) in Razorpay modal
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay via UPI ID / QR',
+                instruments: [
+                  {
+                    method: 'upi',
+                    flows: ['collect', 'qr']
+                  }
+                ]
+              },
+              other: {
+                name: 'Cards & Netbanking',
+                instruments: [
+                  { method: 'card' },
+                  { method: 'netbanking' }
+                ]
+              }
+            },
+            sequence: ['block.upi', 'block.other'],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
         handler: async function (response: any) {
           try {
             const verifyRes = await fetch('/api/verify-payment', {
@@ -187,7 +211,8 @@ export default function BillingPage() {
         prefill: {
           name: 'Dhruv Mishra',
           email: 'founder@sparkhq.ai',
-          contact: '9876543210'
+          contact: '9876543210',
+          vpa: 'test@razorpay'
         },
         notes: {
           planId: plan.id,
@@ -260,7 +285,7 @@ export default function BillingPage() {
                 <h3 className="text-base font-bold text-slate-100">Razorpay Standard Web Checkout</h3>
               </div>
               <p className="text-xs text-slate-400">
-                Key ID: <code className="text-blue-400 font-mono">rzp_test_TMATwCtXP1qs4O</code> • HMAC-SHA256 Server Signature Verification
+                Key ID: <code className="text-blue-400 font-mono">rzp_test_TMATwCtXP1qs4O</code> • Prefilled Test VPA: <code className="text-purple-400 font-mono">test@razorpay</code>
               </p>
             </div>
 
@@ -334,11 +359,11 @@ export default function BillingPage() {
           ))}
         </div>
 
-        {/* Test Card & Modal Instructions Box */}
+        {/* Instructions Box */}
         <div className="glass-card rounded-xl p-5 border border-slate-800/90 text-xs font-mono text-slate-400">
-          <h4 className="font-bold text-slate-200 uppercase tracking-wider mb-2">💡 How to bypass QR Code in Razorpay Modal:</h4>
+          <h4 className="font-bold text-slate-200 uppercase tracking-wider mb-2">💡 Prefilled Test UPI ID inside Razorpay Modal:</h4>
           <p className="mb-3 text-slate-300">
-            If the Razorpay modal shows a QR Code: Select <strong className="text-cyan-400 font-bold">Card</strong> or <strong className="text-purple-400 font-bold">Netbanking</strong> in the modal options. Enter Card <code className="text-slate-200">4111 1111 1111 1111</code>, CVV <code className="text-slate-200">123</code>, Exp <code className="text-slate-200">12/26</code> ➔ Click Pay ➔ Click the green <strong className="text-emerald-400">"Success"</strong> simulation button!
+            We configured Razorpay to prefill <strong className="text-purple-400 font-bold">test@razorpay</strong> automatically in the UPI field! You can also use Netbanking or Domestic Card <code className="text-slate-200">4012 0000 0000 0002</code> for instant 1-click test payments.
           </p>
         </div>
       </main>
