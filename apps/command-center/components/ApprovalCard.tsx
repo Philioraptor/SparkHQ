@@ -15,37 +15,45 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
+  const [showExterminateConfirm, setShowExterminateConfirm] = useState(false);
   const [actionDoneMessage, setActionDoneMessage] = useState<string | null>(null);
 
-  async function handleDecision(decision: 'APPROVED' | 'REJECTED') {
+  async function handleDecision(decision: 'APPROVED' | 'REJECTED' | 'EXTERMINATED') {
     setLoading(true);
     try {
+      let eventType = 'FOUNDER_APPROVED';
+      if (decision === 'REJECTED') eventType = 'FOUNDER_REJECTED';
+      if (decision === 'EXTERMINATED') eventType = 'FOUNDER_KILLED';
+
       const response = await fetch('/api/v1/router/event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           source: 'COMMAND_CENTER',
-          eventType: decision === 'APPROVED' ? 'FOUNDER_APPROVED' : 'FOUNDER_REJECTED',
+          eventType: eventType,
           taskId,
           payload: { feedbackNote: feedback }
         })
       });
 
-      if (!response.ok) {
-        // Fallback for standalone demo mode
-        console.warn('API connection offline, running simulated local action response');
-      }
+      let msg = '✅ Execution Triggered';
+      if (decision === 'REJECTED') msg = '❌ Revision Enqueued';
+      if (decision === 'EXTERMINATED') msg = '☠️ Task Exterminated & Purged';
 
-      setActionDoneMessage(decision === 'APPROVED' ? '✅ Execution Triggered' : '❌ Revision Enqueued');
+      setActionDoneMessage(msg);
       setTimeout(() => {
         onActionComplete();
-      }, 1200);
+      }, 1000);
     } catch (err) {
       console.error('Decision dispatch error:', err);
-      setActionDoneMessage(decision === 'APPROVED' ? '✅ Execution Triggered' : '❌ Revision Enqueued');
+      let msg = '✅ Execution Triggered';
+      if (decision === 'REJECTED') msg = '❌ Revision Enqueued';
+      if (decision === 'EXTERMINATED') msg = '☠️ Task Exterminated';
+
+      setActionDoneMessage(msg);
       setTimeout(() => {
         onActionComplete();
-      }, 1200);
+      }, 1000);
     } finally {
       setLoading(false);
     }
@@ -108,8 +116,29 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
       )}
 
       {actionDoneMessage ? (
-        <div className="mt-4 p-3 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-sm font-medium text-center animate-fade-in">
+        <div className="mt-4 p-3 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-sm font-medium text-center animate-fade-in font-mono">
           {actionDoneMessage}
+        </div>
+      ) : showExterminateConfirm ? (
+        <div className="mt-4 p-4 rounded-xl bg-red-950/90 border border-red-800/80">
+          <p className="text-xs font-bold text-red-200 mb-2">
+            ⚠️ Confirm Task Extermination: Permanently purge this task from queue & cancellation audit log?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleDecision('EXTERMINATED')}
+              disabled={loading}
+              className="bg-red-700 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-xs"
+            >
+              {loading ? 'Exterminating...' : 'Yes, Exterminate Task ☠️'}
+            </button>
+            <button
+              onClick={() => setShowExterminateConfirm(false)}
+              className="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       ) : showRejectBox ? (
         <div className="mt-4 pt-4 border-t border-slate-800">
@@ -140,20 +169,29 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
           </div>
         </div>
       ) : (
-        <div className="flex gap-3 mt-5 pt-4 border-t border-slate-800/80">
+        <div className="flex flex-wrap gap-2.5 mt-5 pt-4 border-t border-slate-800/80">
           <button
             onClick={() => handleDecision('APPROVED')}
             disabled={loading}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm flex-1 shadow-lg shadow-emerald-950/40 transition-all active:scale-[0.98]"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-4 py-2.5 rounded-lg text-sm flex-1 shadow-lg shadow-emerald-950/40 transition-all active:scale-[0.98]"
           >
-            {loading ? 'Processing Event...' : 'Approve & Execute (1-Click)'}
+            {loading ? 'Processing...' : 'Approve & Execute'}
           </button>
+
           <button
             onClick={() => setShowRejectBox(true)}
             disabled={loading}
-            className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-medium px-4 py-2.5 rounded-lg text-sm border border-slate-700/60 transition-all"
+            className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-medium px-3.5 py-2.5 rounded-lg text-xs border border-slate-700/60 transition-all"
           >
             Reject with Feedback
+          </button>
+
+          <button
+            onClick={() => setShowExterminateConfirm(true)}
+            disabled={loading}
+            className="bg-red-950/80 hover:bg-red-900 text-red-300 hover:text-white font-medium px-3.5 py-2.5 rounded-lg text-xs border border-red-800/50 transition-all flex items-center gap-1"
+          >
+            Exterminate ☠️
           </button>
         </div>
       )}

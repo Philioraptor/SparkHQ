@@ -10,7 +10,8 @@ export const EventSchema = z.object({
     'CMO_DRAFT_CREATED',
     'SUPPORT_TICKET_ESCALATED',
     'FOUNDER_APPROVED',
-    'FOUNDER_REJECTED'
+    'FOUNDER_REJECTED',
+    'FOUNDER_KILLED'
   ]),
   taskId: z.string().optional(),
   payload: z.record(z.any())
@@ -62,7 +63,6 @@ export async function routeMultiRepoEvent(
     }
 
     case 'SUPPORT_TICKET_ESCALATED': {
-      // Self-Healing Loop: Support Agent logs bug -> CTO Agent picks bug log & raises PR
       const { ticketId, userEmail, issueDescription } = event.payload;
 
       const task = db && db.task ? await db.task.create({
@@ -148,6 +148,18 @@ export async function routeMultiRepoEvent(
         });
       }
       return { success: true, status: 'RE-ENQUEUED_WITH_FEEDBACK', feedbackNote };
+    }
+
+    case 'FOUNDER_KILLED': {
+      if (!event.taskId) throw new Error('Task ID is required for FOUNDER_KILLED event');
+
+      if (db && db.task) {
+        await db.task.update({
+          where: { id: event.taskId },
+          data: { status: 'FAILED' }
+        });
+      }
+      return { success: true, status: 'TASK_EXTERMINATED' };
     }
 
     default:
