@@ -11,6 +11,7 @@ enum AgentRole {
   CEO
   CTO
   CMO
+  SUPPORT
   FOUNDER
 }
 
@@ -22,6 +23,20 @@ enum TaskStatus {
   COMPLETED
   REJECTED_WITH_FEEDBACK
   FAILED
+}
+
+enum TicketCategory {
+  BUG
+  BILLING
+  FEATURE
+  GENERAL
+}
+
+enum TicketStatus {
+  OPEN
+  ESCALATED_TO_CTO
+  PR_RAISED
+  RESOLVED
 }
 
 model Agent {
@@ -53,4 +68,16 @@ model SystemLog {
   action    String
   details   String
   createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id               String         @id @default(uuid())
+  userEmail        String
+  subject          String
+  issueDescription String
+  category         TicketCategory @default(BUG)
+  status           TicketStatus   @default(OPEN)
+  githubPrUrl      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

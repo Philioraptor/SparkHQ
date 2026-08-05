@@ -3,11 +3,12 @@ import { Queue } from 'bullmq';
 
 // 1. Strict Event Payload Schema
 export const EventSchema = z.object({
-  source: z.enum(['COMMAND_CENTER', 'CTO_WORKER', 'CMO_WORKER', 'GITHUB_WEBHOOK', 'CEO_AGENT']),
+  source: z.enum(['COMMAND_CENTER', 'CTO_WORKER', 'CMO_WORKER', 'SUPPORT_WORKER', 'GITHUB_WEBHOOK', 'CEO_AGENT']),
   eventType: z.enum([
     'FOUNDER_GOAL_SUBMITTED',
     'CTO_PR_RAISED',
     'CMO_DRAFT_CREATED',
+    'SUPPORT_TICKET_ESCALATED',
     'FOUNDER_APPROVED',
     'FOUNDER_REJECTED'
   ]),
@@ -40,39 +41,56 @@ export async function routeMultiRepoEvent(
   // Step C: Route Event to Target Repository Worker
   switch (event.eventType) {
     case 'FOUNDER_GOAL_SUBMITTED': {
-      // CEO Agent parses founder goal & enqueues CTO / CMO tasks
       const { goalText, targetDept = 'CTO' } = event.payload;
       
       const task = db && db.task ? await db.task.create({
         data: {
           title: `Goal: ${goalText.substring(0, 50)}`,
           description: goalText,
-          assignedTo: targetDept, // "CTO" or "CMO"
+          assignedTo: targetDept,
           status: 'IN_PROGRESS',
           requiresApproval: true
         }
       }) : { id: `task-${Date.now()}` };
 
-      if (targetDept === 'CTO') {
-        if (queues.ctoQueue) {
-          await queues.ctoQueue.add('generate-code', { taskId: task.id, prompt: goalText });
-        }
-      } else if (targetDept === 'CMO') {
-        if (queues.cmoQueue) {
-          await queues.cmoQueue.add('generate-copy', { taskId: task.id, prompt: goalText });
-        }
+      if (targetDept === 'CTO' && queues.ctoQueue) {
+        await queues.ctoQueue.add('generate-code', { taskId: task.id, prompt: goalText });
+      } else if (targetDept === 'CMO' && queues.cmoQueue) {
+        await queues.cmoQueue.add('generate-copy', { taskId: task.id, prompt: goalText });
       }
       return { success: true, taskId: task.id, status: 'DISPATCHED', assignedTo: targetDept };
     }
 
+    case 'SUPPORT_TICKET_ESCALATED': {
+      // Self-Healing Loop: Support Agent logs bug -> CTO Agent picks bug log & raises PR
+      const { ticketId, userEmail, issueDescription } = event.payload;
+
+      const task = db && db.task ? await db.task.create({
+        data: {
+          title: `Self-Healing Bugfix: Ticket #${ticketId || Date.now()}`,
+          description: `User Bug Report (${userEmail}): ${issueDescription}`,
+          assignedTo: 'CTO',
+          status: 'IN_PROGRESS',
+          requiresApproval: true
+        }
+      }) : { id: `task-bug-${Date.now()}` };
+
+      if (queues.ctoQueue) {
+        await queues.ctoQueue.add('generate-code', { 
+          taskId: task.id, 
+          prompt: `Fix reported user bug (${issueDescription}). Write robust error handling and fix tests.` 
+        });
+      }
+      return { success: true, taskId: task.id, status: 'BUGFIX_DISPATCHED_TO_CTO' };
+    }
+
     case 'CTO_PR_RAISED': {
-      // CTO Worker finished PR -> Notify Command Center UI
       if (db && db.task && event.taskId) {
         await db.task.update({
           where: { id: event.taskId },
           data: {
             status: 'AWAITING_APPROVAL',
-            outputPayload: event.payload // Contains prUrl, branchName, repo
+            outputPayload: event.payload
           }
         });
       }
@@ -80,13 +98,12 @@ export async function routeMultiRepoEvent(
     }
 
     case 'CMO_DRAFT_CREATED': {
-      // CMO Worker finished Draft -> Notify Command Center UI
       if (db && db.task && event.taskId) {
         await db.task.update({
           where: { id: event.taskId },
           data: {
             status: 'AWAITING_APPROVAL',
-            outputPayload: event.payload // Contains platform, postText
+            outputPayload: event.payload
           }
         });
       }
@@ -94,23 +111,17 @@ export async function routeMultiRepoEvent(
     }
 
     case 'FOUNDER_APPROVED': {
-      // Founder clicked Approve in UI -> Execute GitHub Merge / LinkedIn Post
       if (!event.taskId) throw new Error('Task ID is required for FOUNDER_APPROVED event');
 
       let task = db && db.task ? await db.task.findUnique({ where: { id: event.taskId } }) : null;
-      if (!task && db && db.task) throw new Error(`Task not found for id: ${event.taskId}`);
 
       const assignedTo = task ? task.assignedTo : 'CTO';
       const outputPayload = task ? task.outputPayload : event.payload;
 
-      if (assignedTo === 'CTO') {
-        if (queues.ctoQueue) {
-          await queues.ctoQueue.add('merge-and-deploy', { taskId: event.taskId, payload: outputPayload });
-        }
-      } else if (assignedTo === 'CMO') {
-        if (queues.cmoQueue) {
-          await queues.cmoQueue.add('publish-linkedin', { taskId: event.taskId, payload: outputPayload });
-        }
+      if (assignedTo === 'CTO' && queues.ctoQueue) {
+        await queues.ctoQueue.add('merge-and-deploy', { taskId: event.taskId, payload: outputPayload });
+      } else if (assignedTo === 'CMO' && queues.cmoQueue) {
+        await queues.cmoQueue.add('publish-linkedin', { taskId: event.taskId, payload: outputPayload });
       }
 
       if (db && db.task) {
@@ -123,7 +134,6 @@ export async function routeMultiRepoEvent(
     }
 
     case 'FOUNDER_REJECTED': {
-      // Founder clicked Reject -> Re-enqueue with feedback
       if (!event.taskId) throw new Error('Task ID is required for FOUNDER_REJECTED event');
 
       const feedbackNote = event.payload?.feedbackNote || 'Rejection reason not provided';

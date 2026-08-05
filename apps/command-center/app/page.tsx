@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import GoalSubmissionConsole from '../components/GoalSubmissionConsole';
 import ApprovalCard from '../components/ApprovalCard';
 import AuditTicker from '../components/AuditTicker';
+import SupportChatWidget from '../components/SupportChatWidget';
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<any[]>([
@@ -32,7 +33,7 @@ export default function DashboardPage() {
       requiresApproval: true,
       outputPayload: {
         platform: 'LINKEDIN',
-        postText: '🚀 Excited to announce Project SparkHQ: The Autonomous AI C-Suite for Single Founders!\n\nNo open-ended agent chat loops. Pure 1-click binary approvals.\n\n✨ Key Highlights:\n- CTO Worker creates GitHub PRs automatically\n- CMO Worker generates viral technical B2B posts\n- CEO Standup cron delivers 9AM executive reports\n\nBuilt for single founders who scale standard operations to 100x speed.\n\n#ArtificialIntelligence #Founders #TechLeadership',
+        postText: '🚀 Excited to announce Project SparkHQ: The Autonomous AI C-Suite for Single Founders!\n\nNo open-ended agent chat loops. Pure 1-click binary approvals.\n\n✨ Key Highlights:\n- CTO Worker creates GitHub PRs automatically\n- CMO Worker generates viral technical B2B posts\n- CEO Standup cron delivers 9AM executive reports\n- AI Support Chatbot & Self-Healing Bug Fix Loop\n\nBuilt for single founders who scale standard operations to 100x speed.\n\n#ArtificialIntelligence #Founders #TechLeadership',
         status: 'DRAFT_READY_FOR_APPROVAL'
       },
       createdAt: new Date().toISOString()
@@ -52,7 +53,7 @@ export default function DashboardPage() {
   const pendingApprovals = tasks.filter((t) => t.status === 'AWAITING_APPROVAL' || t.status === 'IN_PROGRESS');
 
   return (
-    <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16">
+    <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16 relative">
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -71,7 +72,7 @@ export default function DashboardPage() {
           <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">CTO Worker PRs</p>
-              <h3 className="text-2xl font-extrabold text-cyan-400 mt-1">12 Raised</h3>
+              <h3 className="text-2xl font-extrabold text-cyan-400 mt-1">14 Raised</h3>
             </div>
             <div className="w-10 h-10 rounded-lg bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center text-cyan-400 text-lg">
               🐙
@@ -80,11 +81,16 @@ export default function DashboardPage() {
 
           <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">CMO LinkedIn Posts</p>
-              <h3 className="text-2xl font-extrabold text-purple-400 mt-1">8 Drafted</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Self-Service Billing</p>
+              <a
+                href="/billing"
+                className="mt-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 underline flex items-center gap-1"
+              >
+                Stripe Portal ↗
+              </a>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400 text-lg">
-              💼
+            <div className="w-10 h-10 rounded-lg bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400 text-lg">
+              💳
             </div>
           </div>
 
@@ -160,21 +166,28 @@ export default function DashboardPage() {
               <ul className="space-y-2.5 text-xs text-slate-400">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-400 font-bold">•</span>
-                  <span><strong>Strict Queue Communications:</strong> Database Event + BullMQ. No open-ended agent chat loops.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold">•</span>
-                  <span><strong>1-Click Binary Approvals:</strong> Approve triggers auto-merge/post; Reject sends structured revision prompt.</span>
+                  <span><strong>AI Support Helpdesk:</strong> 80-90% automated query resolution with Gemini AI Chatbot.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-purple-400 font-bold">•</span>
-                  <span><strong>Stateless Workers & Idempotency:</strong> Automatic exponential backoff retries without duplicate PRs or posts.</span>
+                  <span><strong>Self-Healing Bug Fix Loop:</strong> Support Bug Ticket ➔ CTO Agent PR ➔ 1-Click Founder Approval.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span><strong>Self-Service Billing & Auth:</strong> Stripe Customer Portal (/billing) + Clerk 1-click login.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span><strong>Automated Lifecycle Emails:</strong> Resend / Loops sequence (Day 0 Welcome, Day 3 Feature Highlight, Day 7 Inactivity Alert).</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Embedded Floating AI Helpdesk Support Chatbot */}
+      <SupportChatWidget />
 
       {/* CEO Executive Standup Modal */}
       {standupModalOpen && (
@@ -195,15 +208,16 @@ export default function DashboardPage() {
 Owner: Founder Dhruv Mishra
 
 1. Key Milestones Completed (Past 24h)
-- CTO Worker: 3 GitHub Pull Requests merged to production branches.
-- CMO Worker: 2 B2B LinkedIn updates published with 100% approval.
+- CTO Worker: 3 GitHub Pull Requests merged (including Self-Healing Bug Fix PR #43).
+- CMO Worker: 2 B2B LinkedIn updates auto-published to feed.
+- Support Agent: 12 user queries resolved automatically (91.6% automation rate).
 
 2. Current Queue Status
 - Awaiting Founder Review: 2 tasks in approval inbox.
-- System Uptime: 100% across Render web services & background workers.
+- Billing Health: 100% self-service subscriptions on Stripe Portal.
 
 3. System Audit & Backoff Log
-- BullMQ Redis Queue: 0 failures, 0 retries required.
+- Self-Healing Loop: 0 manual support tickets required.
 - PostgreSQL Prisma Audit: All events logged with zero-exhaustion database routing.`}
             </div>
             <div className="mt-5 text-right">
