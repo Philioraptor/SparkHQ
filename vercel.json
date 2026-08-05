@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev:command-center",
+  "buildCommand": "npm run build:shared && npm run build:command-center",
   "installCommand": "npm install",
   "framework": "nextjs",
   "crons": [
