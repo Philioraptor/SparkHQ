@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build:deps": "cd ../../packages/shared-types && npm run build",
-    "build": "npm run build:deps && next build",
+    "build": "next build",
     "start": "next start -p 3000"
   },
   "dependencies": {
