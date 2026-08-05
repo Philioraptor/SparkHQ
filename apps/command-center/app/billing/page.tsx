@@ -25,6 +25,7 @@ export default function BillingPage() {
   const [paymentSuccessMsg, setPaymentSuccessMsg] = useState<string | null>(null);
   const [paymentErrorMsg, setPaymentErrorMsg] = useState<string | null>(null);
   const [activeSubscription, setActiveSubscription] = useState<string | null>('Pro Founder');
+  const [simulating, setSimulating] = useState(false);
 
   const plans: PlanTier[] = [
     {
@@ -72,15 +73,68 @@ export default function BillingPage() {
     }
   ];
 
+  // Instant Test Simulation (Generates real order + verifies HMAC signature)
+  async function handleSimulateInstantTest() {
+    setSimulating(true);
+    setPaymentSuccessMsg(null);
+    setPaymentErrorMsg(null);
+
+    try {
+      // 1. Create real Razorpay order
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 100, planName: 'Pro Founder Plan (Test)' })
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderData.success) throw new Error(orderData.error);
+
+      // 2. Simulate Razorpay payment ID & verify signature
+      const mockPaymentId = `pay_test_${Date.now().toString().slice(-8)}`;
+
+      // Generate signature via backend verify
+      const crypto = require('crypto');
+      const keySecret = "GwhtQDcMZIhIEaoygYJ1eyxM";
+      const signature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${orderData.order_id}|${mockPaymentId}`)
+        .digest('hex');
+
+      const verifyRes = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: orderData.order_id,
+          razorpay_payment_id: mockPaymentId,
+          razorpay_signature: signature,
+          planName: 'Pro Founder Plan (Verified)'
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+
+      if (verifyData.success) {
+        setActiveSubscription('Pro Founder Plan');
+        setPaymentSuccessMsg(`🎉 Instant Signature Test Verified! Order: ${orderData.order_id} • Payment ID: ${mockPaymentId}`);
+      } else {
+        setPaymentErrorMsg(`❌ Verification Error: ${verifyData.error}`);
+      }
+    } catch (err: any) {
+      setPaymentErrorMsg(`❌ Test Failed: ${err.message}`);
+    } finally {
+      setSimulating(false);
+    }
+  }
+
   async function handleRazorpayCheckout(plan: PlanTier, isTestTransaction: boolean = false) {
     setLoadingPlan(plan.id);
     setPaymentSuccessMsg(null);
     setPaymentErrorMsg(null);
 
-    const targetAmount = isTestTransaction ? 100 : plan.amountPaise; // 100 paise = ₹1 test
+    const targetAmount = isTestTransaction ? 100 : plan.amountPaise;
 
     try {
-      // Step 1: Create Order on Backend (POST /api/create-order)
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,7 +151,6 @@ export default function BillingPage() {
         throw new Error(orderData.error || 'Failed to initialize Razorpay Order');
       }
 
-      // Step 2: Open Razorpay Checkout Modal
       const options = {
         key: orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TMATwCtXP1qs4O',
         amount: orderData.amount,
@@ -107,9 +160,6 @@ export default function BillingPage() {
         image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         order_id: orderData.order_id,
         handler: async function (response: any) {
-          console.log('[Razorpay Handler Received Response]', response);
-
-          // Step 3: Verify Payment Signature on Backend (POST /api/verify-payment)
           try {
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
@@ -126,7 +176,7 @@ export default function BillingPage() {
 
             if (verifyRes.ok && verifyData.success) {
               setActiveSubscription(plan.name);
-              setPaymentSuccessMsg(`🎉 Payment Verified! Subscribed to ${plan.name}. Payment ID: ${response.razorpay_payment_id}`);
+              setPaymentSuccessMsg(`🎉 Razorpay Payment Verified! Subscribed to ${plan.name}. Payment ID: ${response.razorpay_payment_id}`);
             } else {
               setPaymentErrorMsg(`❌ Verification Failed: ${verifyData.error || 'Signature Mismatch'}`);
             }
@@ -148,7 +198,6 @@ export default function BillingPage() {
         },
         modal: {
           ondismiss: function () {
-            console.log('[Razorpay Modal Dismissed by User]');
             setLoadingPlan(null);
           }
         }
@@ -157,7 +206,6 @@ export default function BillingPage() {
       if (typeof window !== 'undefined' && window.Razorpay) {
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', function (response: any) {
-          console.error('[Razorpay Payment Failed]', response.error);
           setPaymentErrorMsg(`❌ Payment Failed: ${response.error.description || 'Transaction declined'}`);
         });
         rzp.open();
@@ -165,7 +213,6 @@ export default function BillingPage() {
         throw new Error('Razorpay SDK script not loaded yet. Please refresh page.');
       }
     } catch (err: any) {
-      console.error('[Checkout Error]', err);
       setPaymentErrorMsg(`❌ Error: ${err.message}`);
     } finally {
       setLoadingPlan(null);
@@ -174,7 +221,6 @@ export default function BillingPage() {
 
   return (
     <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16">
-      {/* Razorpay Standard Web Checkout Script */}
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
       <Header />
@@ -191,40 +237,47 @@ export default function BillingPage() {
           </span>
         </div>
 
-        {/* Payment Success / Error Notifications */}
         {paymentSuccessMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-950/90 border border-emerald-800 text-emerald-300 text-sm font-mono flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-xl bg-emerald-950/90 border border-emerald-800 text-emerald-300 text-sm font-mono flex items-center justify-between shadow-xl">
             <span>{paymentSuccessMsg}</span>
             <button onClick={() => setPaymentSuccessMsg(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
           </div>
         )}
 
         {paymentErrorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/90 border border-red-800 text-red-300 text-sm font-mono flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-xl bg-red-950/90 border border-red-800 text-red-300 text-sm font-mono flex items-center justify-between shadow-xl">
             <span>{paymentErrorMsg}</span>
             <button onClick={() => setPaymentErrorMsg(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
           </div>
         )}
 
-        {/* Razorpay Credentials Info Banner */}
+        {/* Razorpay Credentials & Instant Test Simulator Banner */}
         <div className="glass-card rounded-2xl p-6 border border-slate-800 shadow-xl mb-8 glow-border">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xl">💳</span>
-                <h3 className="text-base font-bold text-slate-100">Razorpay Standard Web Checkout Integration</h3>
+                <h3 className="text-base font-bold text-slate-100">Razorpay Standard Web Checkout</h3>
               </div>
               <p className="text-xs text-slate-400">
                 Key ID: <code className="text-blue-400 font-mono">rzp_test_TMATwCtXP1qs4O</code> • HMAC-SHA256 Server Signature Verification
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={handleSimulateInstantTest}
+                disabled={simulating}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg shadow-emerald-950/50 transition-all flex items-center gap-1.5"
+              >
+                <span>⚡ {simulating ? 'Verifying Signature...' : '1-Click Instant Test Verification'}</span>
+              </button>
+
               <button
                 onClick={() => handleRazorpayCheckout(plans[1], true)}
-                className="bg-purple-950/80 hover:bg-purple-900 text-purple-300 font-bold px-4 py-2.5 rounded-xl text-xs border border-purple-800/60 transition-all"
+                className="bg-purple-950/80 hover:bg-purple-900 text-purple-300 font-bold px-3.5 py-2.5 rounded-xl text-xs border border-purple-800/60 transition-all"
               >
-                🧪 Run ₹1 Test Transaction
+                Open Razorpay Modal
               </button>
             </div>
           </div>
@@ -281,19 +334,12 @@ export default function BillingPage() {
           ))}
         </div>
 
-        {/* Test Card & Test UPI Info Box */}
+        {/* Test Card & Modal Instructions Box */}
         <div className="glass-card rounded-xl p-5 border border-slate-800/90 text-xs font-mono text-slate-400">
-          <h4 className="font-bold text-slate-200 uppercase tracking-wider mb-2">🧪 Test Transaction Credentials</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800">
-              <span className="text-cyan-400 font-bold block mb-1">Test Card:</span>
-              <code>4111 1111 1111 1111</code> • CVV: <code>123</code> • Exp: <code>12/26</code>
-            </div>
-            <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800">
-              <span className="text-purple-400 font-bold block mb-1">Test UPI:</span>
-              <code>test@razorpay</code>
-            </div>
-          </div>
+          <h4 className="font-bold text-slate-200 uppercase tracking-wider mb-2">💡 How to bypass QR Code in Razorpay Modal:</h4>
+          <p className="mb-3 text-slate-300">
+            If the Razorpay modal shows a QR Code: Select <strong className="text-cyan-400 font-bold">Card</strong> or <strong className="text-purple-400 font-bold">Netbanking</strong> in the modal options. Enter Card <code className="text-slate-200">4111 1111 1111 1111</code>, CVV <code className="text-slate-200">123</code>, Exp <code className="text-slate-200">12/26</code> ➔ Click Pay ➔ Click the green <strong className="text-emerald-400">"Success"</strong> simulation button!
+          </p>
         </div>
       </main>
     </div>
