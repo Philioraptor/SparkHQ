@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required Razorpay payment signature verification fields' }, { status: 400 });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "GwhtQDcMZIhIEaoygYJ1eyxM";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "NwwUimezuw4S58AVZrHlynGg";
 
     // HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -30,14 +30,14 @@ export async function POST(request: Request) {
     memoryLogs.unshift({
       id: `log-${Date.now()}`,
       agentRole: 'BILLING',
-      action: 'RAZORPAY_PAYMENT_VERIFIED',
-      details: `Payment ${razorpay_payment_id} verified for Order ${razorpay_order_id} (${planName})`,
+      action: 'RAZORPAY_LIVE_PAYMENT_VERIFIED',
+      details: `Live Payment ${razorpay_payment_id} verified for Order ${razorpay_order_id} (${planName})`,
       createdAt: new Date().toISOString()
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Razorpay Payment Signature Verified Successfully!',
+      message: 'Razorpay Live Payment Signature Verified Successfully!',
       payment_id: razorpay_payment_id,
       order_id: razorpay_order_id,
       planName

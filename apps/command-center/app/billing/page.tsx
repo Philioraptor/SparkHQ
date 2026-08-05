@@ -89,7 +89,6 @@ export default function BillingPage() {
     }
   ];
 
-  // 1-Click Plan Activation (Free BYOK or Paid)
   async function handleActivatePlan(plan: PlanTier) {
     setLoadingPlan(plan.id);
     setPaymentSuccessMsg(null);
@@ -106,42 +105,82 @@ export default function BillingPage() {
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: plan.amountPaise, planName: plan.name })
-      });
-      const orderData = await orderRes.json();
-
-      const mockPaymentId = `pay_bypass_${Date.now().toString().slice(-8)}`;
-
-      const crypto = require('crypto');
-      const keySecret = "GwhtQDcMZIhIEaoygYJ1eyxM";
-      const signature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${orderData.order_id || 'order_bypass'}|${mockPaymentId}`)
-        .digest('hex');
-
-      const verifyRes = await fetch('/api/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          razorpay_order_id: orderData.order_id || 'order_bypass',
-          razorpay_payment_id: mockPaymentId,
-          razorpay_signature: signature,
-          planName: plan.name
+          amount: plan.amountPaise,
+          planName: plan.name,
+          currency: 'INR'
         })
       });
 
-      const verifyData = await verifyRes.json();
+      const orderData = await orderRes.json();
 
-      if (verifyData.success) {
-        setActiveSubscription(plan.name);
-        setPaymentSuccessMsg(`🎉 Welcome to ${plan.name}! Payment ID: ${mockPaymentId}`);
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Failed to initialize Razorpay Live Order');
+      }
+
+      const options = {
+        key: orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TMBqGRFBGmtaMH',
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'SparkHQ AI C-Suite',
+        description: `Subscription: ${plan.name}`,
+        image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
+        order_id: orderData.order_id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                planName: plan.name
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              setActiveSubscription(plan.name);
+              setPaymentSuccessMsg(`🎉 Live Payment Verified! Subscribed to ${plan.name}. Payment ID: ${response.razorpay_payment_id}`);
+            } else {
+              setPaymentErrorMsg(`❌ Verification Failed: ${verifyData.error || 'Signature Mismatch'}`);
+            }
+          } catch (verifyErr: any) {
+            setPaymentErrorMsg(`❌ Verification Error: ${verifyErr.message}`);
+          }
+        },
+        prefill: {
+          name: 'Dhruv Mishra',
+          email: 'founder@sparkhq.ai',
+          contact: '9876543210'
+        },
+        notes: {
+          planId: plan.id,
+          planName: plan.name
+        },
+        theme: {
+          color: '#3B82F6'
+        },
+        modal: {
+          ondismiss: function () {
+            setLoadingPlan(null);
+          }
+        }
+      };
+
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          setPaymentErrorMsg(`❌ Payment Failed: ${response.error.description || 'Transaction declined'}`);
+        });
+        rzp.open();
       } else {
-        setActiveSubscription(plan.name);
-        setPaymentSuccessMsg(`🎉 Plan Activated: ${plan.name}`);
+        throw new Error('Razorpay SDK script not loaded yet. Please refresh page.');
       }
     } catch (err: any) {
-      setActiveSubscription(plan.name);
-      setPaymentSuccessMsg(`🎉 Instant Plan Activated: ${plan.name}`);
+      setPaymentErrorMsg(`❌ Error: ${err.message}`);
     } finally {
       setLoadingPlan(null);
     }
@@ -157,7 +196,7 @@ export default function BillingPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight">Self-Service Subscriptions & BYOK Tiers</h1>
-            <p className="text-xs text-slate-400 mt-1">Forever Free BYOK Tier + Managed Razorpay Gateway</p>
+            <p className="text-xs text-slate-400 mt-1">Razorpay Live Production Gateway • Real-time Signature Verification</p>
           </div>
           <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/50 flex items-center gap-1.5 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -179,16 +218,16 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Free BYOK Tier Highlight Banner */}
+        {/* Live Gateway Highlight Banner */}
         <div className="glass-card rounded-2xl p-6 border border-emerald-800/80 shadow-2xl mb-8 glow-border">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">🔑</span>
-                <h3 className="text-base font-bold text-slate-100">Forever Free BYOK Tier Available!</h3>
+                <span className="text-xl">💳</span>
+                <h3 className="text-base font-bold text-slate-100">Razorpay Live Production Gateway Connected!</h3>
               </div>
               <p className="text-xs text-slate-400">
-                Bring your own Gemini API Key, GitHub Token, & LinkedIn credentials. No monthly charges or hidden markups!
+                Live Key ID: <code className="text-emerald-400 font-mono">rzp_live_TMBqGRFBGmtaMH</code> • Accepts Real UPI, GPay, PhonePe, Cards & Netbanking
               </p>
             </div>
 
@@ -257,7 +296,7 @@ export default function BillingPage() {
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60'
                   }`}
                 >
-                  {plan.isFree ? '⚡ Select Free BYOK Tier (₹0)' : `⚡ Select ${plan.name}`}
+                  {plan.isFree ? '⚡ Select Free BYOK Tier (₹0)' : `Pay & Subscribe (${plan.priceDisplay})`}
                 </button>
               </div>
             </div>

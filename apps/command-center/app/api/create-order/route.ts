@@ -7,13 +7,12 @@ export async function POST(request: Request) {
 
     const amountInPaise = Number(amount);
 
-    // Validate minimum amount >= 100 paise
     if (!amountInPaise || isNaN(amountInPaise) || amountInPaise < 100) {
       return NextResponse.json({ success: false, error: 'Amount must be at least 100 paise (₹1)' }, { status: 400 });
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID || "rzp_test_TMATwCtXP1qs4O";
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "GwhtQDcMZIhIEaoygYJ1eyxM";
+    const keyId = process.env.RAZORPAY_KEY_ID || "rzp_live_TMBqGRFBGmtaMH";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "NwwUimezuw4S58AVZrHlynGg";
 
     if (!keyId || !keySecret) {
       return NextResponse.json({ success: false, error: 'Razorpay API credentials missing on server' }, { status: 401 });
@@ -36,7 +35,7 @@ export async function POST(request: Request) {
       }
     });
 
-    console.log('[Razorpay Order Created]', order.id, 'Amount:', order.amount);
+    console.log('[Razorpay Live Order Created]', order.id, 'Amount:', order.amount);
 
     return NextResponse.json({
       success: true,
