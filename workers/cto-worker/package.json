@@ -1,0 +1,23 @@
+{
+  "name": "sparkhq-cto-worker",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.15.0",
+    "@octokit/rest": "^20.0.2",
+    "@prisma/client": "^5.9.0",
+    "@sparkhq/shared-types": "file:../../packages/shared-types",
+    "bullmq": "^5.1.0",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

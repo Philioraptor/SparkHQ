@@ -1,0 +1,20 @@
+{
+  "name": "sparkhq-ceo-cron",
+  "version": "1.0.0",
+  "main": "dist/standup.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/standup.js",
+    "dev": "ts-node src/standup.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.15.0",
+    "@prisma/client": "^5.9.0",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

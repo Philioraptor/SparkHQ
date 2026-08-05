@@ -1,0 +1,112 @@
+services:
+  # 1. Founder Command Center UI (Next.js)
+  - type: web
+    name: sparkhq-command-center
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm run build --filter=command-center
+    startCommand: npm run start --filter=command-center
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sparkhq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: sparkhq-redis
+          property: connectionString
+
+  # 2. Central Orchestrator API
+  - type: web
+    name: sparkhq-orchestrator-api
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm run build --filter=orchestrator-api
+    startCommand: node apps/orchestrator-api/dist/index.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sparkhq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: sparkhq-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # 3. CTO Background Worker (GitHub Code Execution)
+  - type: worker
+    name: sparkhq-cto-worker
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm run build --filter=cto-worker
+    startCommand: node workers/cto-worker/dist/index.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sparkhq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: sparkhq-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+
+  # 4. CMO Background Worker (LinkedIn Copy & B2B Posts)
+  - type: worker
+    name: sparkhq-cmo-worker
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm run build --filter=cmo-worker
+    startCommand: node workers/cmo-worker/dist/index.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sparkhq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: sparkhq-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LINKEDIN_CLIENT_ID
+        sync: false
+
+  # 5. CEO Daily Executive Standup Cron Job
+  - type: cron
+    name: sparkhq-ceo-standup-cron
+    env: node
+    region: singapore
+    schedule: "0 3 * * *" # Daily at 9:00 AM IST (3:00 AM UTC)
+    buildCommand: npm run build --filter=ceo-cron
+    startCommand: node workers/ceo-cron/dist/standup.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sparkhq-postgres
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+
+# Managed Storage
+databases:
+  - name: sparkhq-postgres
+    region: singapore
+    plan: starter
+
+  - name: sparkhq-redis
+    region: singapore
+    plan: starter

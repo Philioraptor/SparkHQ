@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AgentRole {
+  CEO
+  CTO
+  CMO
+  FOUNDER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  AWAITING_APPROVAL
+  EXECUTING_APPROVED_ACTION
+  COMPLETED
+  REJECTED_WITH_FEEDBACK
+  FAILED
+}
+
+model Agent {
+  id        String    @id @default(uuid())
+  role      AgentRole @unique
+  status    String    @default("IDLE") // IDLE, THINKING, EXECUTING
+  tasks     Task[]    @relation("AssignedAgent")
+  createdAt DateTime  @default(now())
+}
+
+model Task {
+  id               String     @id @default(uuid())
+  title            String
+  description      String
+  assignedTo       AgentRole
+  agent            Agent?     @relation("AssignedAgent", fields: [assignedTo], references: [role])
+  status           TaskStatus @default(PENDING)
+  requiresApproval Boolean    @default(true)
+  inputPayload     Json?
+  outputPayload    Json?      // Stores generated code PR URL, branch name, or LinkedIn post draft
+  feedbackNote     String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  agentRole String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+}
