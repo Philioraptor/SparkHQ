@@ -26,7 +26,7 @@ export default function ApiKeyVault() {
     {
       id: 'msg-welcome',
       sender: 'AGENT',
-      text: "👋 Hi! I'm your Vault AI Agent. Paste your API keys or LinkedIn Access Token here (Gemini, GitHub, LinkedIn, Instagram, OpenAI) and I will automatically parse and save them safely into your browser vault!",
+      text: "👋 Hi! I'm your Vault AI Agent. Paste your API keys or LinkedIn OAuth credentials (Gemini, GitHub, LinkedIn Client ID/Secret, Access Token, OpenAI) and I will parse & store them safely in your isolated browser vault!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -59,6 +59,15 @@ export default function ApiKeyVault() {
     localStorage.setItem('sparkhq_user_api_vault', JSON.stringify(updated));
     setSavedMsg('🔒 Vault Encrypted & Saved!');
     setTimeout(() => setSavedMsg(null), 3000);
+  }
+
+  function handleLinkedInOAuthConnect() {
+    const cid = linkedinClientId.trim() || '7737g0dxx6imer';
+    const redirectUri = encodeURIComponent(window.location.origin + '/api/v1/auth/linkedin/callback');
+    const scope = encodeURIComponent('w_member_social r_liteprofile');
+    const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${cid}&redirect_uri=${redirectUri}&scope=${scope}&state=sparkhq_oauth`;
+
+    window.open(linkedinAuthUrl, '_blank', 'width=600,height=700');
   }
 
   function handleAgentChatSubmit(e: React.FormEvent) {
@@ -100,7 +109,7 @@ export default function ApiKeyVault() {
     if (linkedinTokenMatch) {
       setLinkedinAccessToken(linkedinTokenMatch[0]);
       updatePayload.linkedinAccessToken = linkedinTokenMatch[0];
-      detected.push('LinkedIn OAuth Access Token');
+      detected.push('LinkedIn OAuth Access Token / Secret');
     }
 
     const linkedinIdMatch = userText.match(/77[a-zA-Z0-9]{12,18}/);
@@ -124,7 +133,7 @@ export default function ApiKeyVault() {
 
     let agentResponseText = "";
     if (detected.length > 0) {
-      agentResponseText = `🔒 Parsed & Saved: ${detected.join(', ')} into your isolated vault! CMO Agent will now auto-post live to LinkedIn! 🚀`;
+      agentResponseText = `🔒 Parsed & Saved: ${detected.join(', ')} into your isolated browser vault! CMO Agent will use these to post live to LinkedIn! 🚀`;
     } else {
       agentResponseText = "Got it! Saved key text in your browser vault. You can inspect or edit keys in the 'Manual Inputs' tab anytime!";
       saveToVault({ rawUserNote: userText });
@@ -168,7 +177,7 @@ export default function ApiKeyVault() {
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-slate-100">Personal API Key Vault (BYOK)</h2>
-            <p className="text-xs text-slate-400">Browser Vault Agent • Gemini, GitHub, LinkedIn Access Token, & OpenAI Keys</p>
+            <p className="text-xs text-slate-400">Browser Vault Agent • Gemini, GitHub, LinkedIn Client ID/Secret, & OpenAI Keys</p>
           </div>
         </div>
 
@@ -224,7 +233,7 @@ export default function ApiKeyVault() {
           <form onSubmit={handleAgentChatSubmit} className="flex gap-2">
             <input
               type="text"
-              placeholder="Paste or tell me your API keys / LinkedIn Token..."
+              placeholder="Paste or tell me your API keys / LinkedIn credentials..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               className="flex-1 bg-slate-950 text-xs text-slate-100 p-3.5 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 font-mono"
@@ -243,7 +252,7 @@ export default function ApiKeyVault() {
       {/* MODE 2: MANUAL FIELDS INPUT */}
       {inputMode === 'MANUAL' && (
         <form onSubmit={handleSaveManual} className="space-y-4">
-          {/* Gemini & LinkedIn Access Token */}
+          {/* Gemini & LinkedIn OAuth */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
@@ -259,16 +268,58 @@ export default function ApiKeyVault() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                LinkedIn OAuth Access Token (w_member_social)
+                LinkedIn Client ID
+              </label>
+              <input
+                type="text"
+                placeholder="7737g0dxx6imer"
+                value={linkedinClientId}
+                onChange={(e) => setLinkedinClientId(e.target.value)}
+                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                LinkedIn Client Secret
               </label>
               <input
                 type="password"
-                placeholder="AQ... (Your LinkedIn Access Token)"
+                placeholder="WPL_AP1..."
+                value={linkedinClientSecret}
+                onChange={(e) => setLinkedinClientSecret(e.target.value)}
+                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                LinkedIn Access Token (Optional Direct Token)
+              </label>
+              <input
+                type="password"
+                placeholder="AQ... (Optional direct OAuth token)"
                 value={linkedinAccessToken}
                 onChange={(e) => setLinkedinAccessToken(e.target.value)}
                 className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
+          </div>
+
+          {/* 1-Click LinkedIn OAuth Connect Trigger */}
+          <div className="p-4 rounded-xl bg-blue-950/40 border border-blue-800/50 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-blue-200">1-Click LinkedIn OAuth Account Connection</p>
+              <p className="text-[11px] text-slate-400">Uses your Client ID & Secret to connect your profile in 1 click.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLinkedInOAuthConnect}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-all shadow-md"
+            >
+              🔗 Connect LinkedIn Account
+            </button>
           </div>
 
           {/* GitHub Specs */}
@@ -311,39 +362,11 @@ export default function ApiKeyVault() {
             </div>
           </div>
 
-          {/* LinkedIn App Credentials */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                LinkedIn Client ID
-              </label>
-              <input
-                type="text"
-                placeholder="7737g0dxx6imer"
-                value={linkedinClientId}
-                onChange={(e) => setLinkedinClientId(e.target.value)}
-                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                LinkedIn Client Secret
-              </label>
-              <input
-                type="password"
-                placeholder="WPL_AP1..."
-                value={linkedinClientSecret}
-                onChange={(e) => setLinkedinClientSecret(e.target.value)}
-                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
-              />
-            </div>
-          </div>
-
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-lg active:scale-95"
           >
-            Save All Keys & LinkedIn Access Token 🔒
+            Save All Keys to Browser Vault 🔒
           </button>
         </form>
       )}
