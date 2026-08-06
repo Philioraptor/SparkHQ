@@ -37,7 +37,7 @@ export default function DashboardPage() {
       requiresApproval: true,
       outputPayload: {
         platform: 'LINKEDIN',
-        postText: '🚀 Excited to announce Project SparkHQ: The Autonomous AI C-Suite for Single Founders!\n\nNo open-ended agent chat loops. Pure 1-click binary approvals.\n\n✨ Key Highlights:\n- CTO Worker creates GitHub PRs automatically\n- CMO Worker generates viral technical B2B posts\n- CEO Standup cron delivers 9AM executive reports\n- AI Support Chatbot & Self-Healing Bug Fix Loop\n- BYOK Personal API Key Vault Isolation & Task Exterminator\n\nBuilt for single founders who scale standard operations to 100x speed.\n\n#ArtificialIntelligence #Founders #TechLeadership',
+        postText: '🚀 Excited to announce Project SparkHQ: The Autonomous AI C-Suite for Single Founders!\n\n100% Open Source & Free Forever! No open-ended agent chat loops. Pure 1-click binary approvals.\n\n✨ Key Highlights:\n- CTO Worker creates GitHub PRs automatically\n- CMO Worker generates viral technical B2B posts\n- CEO Standup cron delivers 9AM executive reports\n- AI Support Chatbot & Self-Healing Bug Fix Loop\n- BYOK Personal Vault AI Agent Chat Interface\n\nBuilt for single founders who scale standard operations to 100x speed.\n\n#ArtificialIntelligence #OpenSource #Founders #TechLeadership',
         status: 'DRAFT_READY_FOR_APPROVAL'
       },
       createdAt: new Date().toISOString()
@@ -58,18 +58,18 @@ export default function DashboardPage() {
 
   return (
     <FounderAuthGuard>
-      <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16 relative">
+      <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16 relative font-sans">
         <Header />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          {/* Top Navigation Tabs */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-8">
-            <div className="flex gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          {/* Navigation Bar */}
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-4 mb-8 gap-4">
+            <div className="flex gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
               <button
                 onClick={() => setActiveTab('COMMAND')}
-                className={`text-xs font-bold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 ${
+                className={`text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 ${
                   activeTab === 'COMMAND'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-950/50'
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-blue-950/50'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -83,29 +83,29 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => setActiveTab('VAULT')}
-                className={`text-xs font-bold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 ${
+                className={`text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 ${
                   activeTab === 'VAULT'
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/50'
+                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-lg shadow-purple-950/50'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span>🔑 Personal API Key Vault (BYOK)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/40 uppercase">
-                  Isolated
+                <span>🔑 Vault AI Agent (BYOK Keys)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800/40 uppercase">
+                  Free BYOK
                 </span>
               </button>
             </div>
 
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <a
                 href="/billing"
-                className="text-xs font-bold text-slate-300 hover:text-white px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-1.5"
+                className="text-xs font-bold text-amber-300 hover:text-white px-3.5 py-2 rounded-xl bg-amber-950/50 border border-amber-800/60 flex items-center gap-1.5 transition-all shadow-md"
               >
-                <span>💳 Billing Portal</span>
+                <span>☕ Buy Me a Coffee</span>
               </a>
               <button
                 onClick={() => setStandupModalOpen(true)}
-                className="text-xs font-bold text-blue-400 hover:text-blue-300 px-3.5 py-2 rounded-lg bg-blue-950/60 border border-blue-800/50 flex items-center gap-1.5"
+                className="text-xs font-bold text-blue-400 hover:text-blue-300 px-3.5 py-2 rounded-xl bg-blue-950/60 border border-blue-800/50 flex items-center gap-1.5 transition-all shadow-md"
               >
                 <span>📊 CEO 9AM Standup</span>
               </button>
@@ -116,49 +116,49 @@ export default function DashboardPage() {
           {activeTab === 'COMMAND' && (
             <>
               {/* Metric Counter Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Awaiting Decisions</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Awaiting Decisions</p>
                     <h3 className="text-2xl font-extrabold text-amber-400 mt-1">{pendingApprovals.length} Tasks</h3>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-amber-950/60 border border-amber-800/40 flex items-center justify-center text-amber-400 text-lg">
+                  <div className="w-10 h-10 rounded-xl bg-amber-950/60 border border-amber-800/40 flex items-center justify-center text-amber-400 text-lg shadow-md">
                     ⏳
                   </div>
                 </div>
 
-                <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
+                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">CTO Worker PRs</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">CTO Worker PRs</p>
                     <h3 className="text-2xl font-extrabold text-cyan-400 mt-1">14 Raised</h3>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center text-cyan-400 text-lg">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center text-cyan-400 text-lg shadow-md">
                     🐙
                   </div>
                 </div>
 
-                <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
+                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Exterminated Tasks</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Exterminated Tasks</p>
                     <h3 className="text-2xl font-extrabold text-rose-400 mt-1">0 Purged</h3>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-rose-950/60 border border-rose-800/40 flex items-center justify-center text-rose-400 text-lg">
+                  <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-800/40 flex items-center justify-center text-rose-400 text-lg shadow-md">
                     ☠️
                   </div>
                 </div>
 
-                <div className="glass-card rounded-xl p-5 border border-slate-800 flex items-center justify-between">
+                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">API Vault Isolation</p>
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Vault AI Agent</p>
                     <button
                       onClick={() => setActiveTab('VAULT')}
                       className="mt-1 text-xs font-bold text-purple-400 hover:text-purple-300 underline flex items-center gap-1"
                     >
-                      Manage Keys 🔑
+                      Chat & Add Keys 🔑
                     </button>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400 text-lg">
-                    🔒
+                  <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400 text-lg shadow-md">
+                    🤖
                   </div>
                 </div>
               </div>
@@ -183,8 +183,8 @@ export default function DashboardPage() {
                   </div>
 
                   {pendingApprovals.length === 0 ? (
-                    <div className="glass-card rounded-xl p-12 text-center border border-slate-800">
-                      <div className="w-12 h-12 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 flex items-center justify-center mx-auto mb-3 text-xl">
+                    <div className="glass-card rounded-2xl p-12 text-center border border-slate-800">
+                      <div className="w-12 h-12 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 flex items-center justify-center mx-auto mb-3 text-xl shadow-lg">
                         ✨
                       </div>
                       <h4 className="font-bold text-slate-200 text-base mb-1">Queue Clean & Clear</h4>
@@ -211,27 +211,27 @@ export default function DashboardPage() {
                 <div className="lg:col-span-5 space-y-6">
                   <AuditTicker />
 
-                  {/* Architecture Principles Box */}
-                  <div className="glass-card rounded-xl p-5 border border-slate-800/90">
+                  {/* Open Source Principles Box */}
+                  <div className="glass-card rounded-2xl p-5 border border-slate-800/90 glow-border">
                     <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
-                      Zero-Exhaustion Engineering Principles
+                      SparkHQ Open Source Principles
                     </h3>
                     <ul className="space-y-2.5 text-xs text-slate-400">
                       <li className="flex items-start gap-2">
+                        <span className="text-amber-400 font-bold">•</span>
+                        <span><strong>100% Open Source:</strong> Free forever. Contributions & Pull Requests welcome on GitHub!</span>
+                      </li>
+                      <li className="flex items-start gap-2">
                         <span className="text-purple-400 font-bold">•</span>
-                        <span><strong>Isolated BYOK Key Vault:</strong> Users bring their own API keys; strictly isolated in local browser vault.</span>
+                        <span><strong>Vault AI Agent Assistant:</strong> Chat naturally to parse & store your Gemini, GitHub, & LinkedIn keys.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-rose-400 font-bold">•</span>
-                        <span><strong>Task Extermination Controls:</strong> Instantly kill and purge unwanted agent tasks with 1 click.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-400 font-bold">•</span>
-                        <span><strong>Founder Auth Security:</strong> Locked with Master Security Key to prevent public misuse.</span>
+                        <span><strong>Task Exterminator:</strong> Purge unwanted agent tasks from queue with 1 click.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-blue-400 font-bold">•</span>
-                        <span><strong>AI Support Helpdesk:</strong> 80-90% automated query resolution with Gemini AI Chatbot.</span>
+                        <span><strong>Self-Healing Bug Loop:</strong> Support Bug Ticket ➔ CTO Agent PR ➔ 1-Click Founder Approval.</span>
                       </li>
                     </ul>
                   </div>
@@ -263,17 +263,17 @@ export default function DashboardPage() {
               </div>
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
 {`### Executive Standup Summary - ${new Date().toISOString().split('T')[0]}
-Owner: Founder Dhruv Mishra
+Owner: Founder Dhruv Mishra (Open Source Core)
 
 1. Key Milestones Completed (Past 24h)
 - CTO Worker: 3 GitHub Pull Requests merged (including Self-Healing Bug Fix PR #43).
 - CMO Worker: 2 B2B LinkedIn updates auto-published to feed.
 - Support Agent: 12 user queries resolved automatically (91.6% automation rate).
 
-2. Security & Tenant Isolation
-- BYOK API Vault: Active. Users manage isolated personal API keys.
-- Task Exterminator: Enabled for instant task purging.
-- Security Guard: Founder Auth Lock Active.
+2. Open Source & Vault Status
+- GitHub Repository: Philioraptor/SparkHQ (Public Open Source)
+- Vault AI Chat Agent: Active. Users chat to parse & store Gemini, GitHub, & LinkedIn keys.
+- Task Exterminator: Enabled for 1-click purging.
 
 3. System Audit & Backoff Log
 - Self-Healing Loop: 0 manual support tickets required.
