@@ -33,7 +33,7 @@ export default function CoffeeSupportPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: amountInPaise,
-          planName: `Open Source Coffee Support (₹${amountRs})`,
+          planName: `Coffee / Energy Drink Support (₹${amountRs})`,
           currency: 'INR'
         })
       });
@@ -49,7 +49,7 @@ export default function CoffeeSupportPage() {
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'SparkHQ Open Source',
-        description: `Coffee Tip: ₹${amountRs}`,
+        description: `Support: ₹${amountRs}`,
         image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         order_id: orderData.order_id,
         handler: async function (response: any) {
@@ -61,12 +61,12 @@ export default function CoffeeSupportPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                planName: `Coffee Support ₹${amountRs}`
+                planName: `Coffee / Energy Drink Support ₹${amountRs}`
               })
             });
-            setSuccessMsg(`❤️ Thank you so much for supporting SparkHQ Open Source! Payment ID: ${response.razorpay_payment_id}`);
+            setSuccessMsg(`❤️ Thank you so much for supporting SparkHQ! Payment ID: ${response.razorpay_payment_id}`);
           } catch (e) {
-            setSuccessMsg(`❤️ Thank you for supporting Open Source! Payment ID: ${response.razorpay_payment_id}`);
+            setSuccessMsg(`❤️ Thank you for your support! Payment ID: ${response.razorpay_payment_id}`);
           }
         },
         prefill: {
@@ -95,15 +95,20 @@ export default function CoffeeSupportPage() {
 
       <Header />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+      <main className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Minimal Hero */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/20 mx-auto mb-4">
-            ☕
+          <div className="flex justify-center gap-3 mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-2xl shadow-xl shadow-amber-500/20">
+              ☕
+            </div>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-2xl shadow-xl shadow-purple-500/20">
+              ⚡
+            </div>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">Buy Me a Coffee</h1>
+          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">Support Coffee or Energy Drink</h1>
           <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-            Project SparkHQ is 100% <strong>Free & Open Source</strong>! Enter any amount to support development.
+            SparkHQ is 100% <strong>Free & Open Source</strong>. Enter any custom amount to support development!
           </p>
         </div>
 
@@ -114,27 +119,27 @@ export default function CoffeeSupportPage() {
         )}
 
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/90 border border-red-800 text-red-300 text-xs font-mono text-center shadow-xl">
+          <div className="mb-6 p-4 rounded-xl bg-red-950/90 border border-red-800 text-red-300 text-sm font-mono text-center shadow-xl">
             {errorMsg}
           </div>
         )}
 
-        {/* Minimal Custom Coffee Card */}
+        {/* Minimal Custom Coffee / Energy Drink Card */}
         <div className="glass-card rounded-2xl p-8 border border-slate-800 shadow-2xl glow-border text-center mb-8">
           <form onSubmit={handleDonate} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Enter Custom Coffee Support Amount (INR ₹)
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+                Custom Support for Coffee ☕ or Energy Drink ⚡ (INR ₹)
               </label>
               <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
-                <span className="text-xl font-bold font-mono text-amber-400">₹</span>
+                <span className="text-2xl font-bold font-mono text-amber-400">₹</span>
                 <input
                   type="number"
                   min="1"
                   placeholder="100"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
-                  className="w-full bg-slate-950 text-xl font-extrabold text-slate-100 p-4 rounded-xl border border-slate-800 text-center font-mono focus:outline-none focus:border-amber-500 shadow-inner"
+                  className="w-full bg-slate-950 text-2xl font-extrabold text-slate-100 p-4 rounded-xl border border-slate-800 text-center font-mono focus:outline-none focus:border-amber-500 shadow-inner"
                   required
                   autoFocus
                 />
@@ -144,9 +149,9 @@ export default function CoffeeSupportPage() {
             <button
               type="submit"
               disabled={loading || !customAmount}
-              className="w-full max-w-xs mx-auto bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold py-4 rounded-xl text-sm transition-all shadow-lg shadow-amber-950/50 active:scale-95"
+              className="w-full max-w-xs mx-auto bg-gradient-to-r from-amber-500 via-orange-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-slate-950 font-extrabold py-4 rounded-xl text-xs transition-all shadow-lg shadow-amber-950/50 active:scale-95"
             >
-              {loading ? 'Opening Gateway...' : `Buy Me a Coffee (₹${customAmount || 0}) ☕`}
+              {loading ? 'Opening Gateway...' : `Send Coffee ☕ / Energy Drink ⚡ (₹${customAmount || 0})`}
             </button>
           </form>
         </div>
