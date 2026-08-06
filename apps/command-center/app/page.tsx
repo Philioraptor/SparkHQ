@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import GoalSubmissionConsole from '../components/GoalSubmissionConsole';
 import ApprovalCard from '../components/ApprovalCard';
@@ -12,7 +12,7 @@ import ApiKeyVault from '../components/ApiKeyVault';
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'COMMAND' | 'VAULT'>('COMMAND');
 
-  const [tasks, setTasks] = useState<any[]>([
+  const defaultInitialTasks = [
     {
       id: 'task-stripe-pr',
       title: 'Goal: Build Next.js Stripe Checkout Component',
@@ -42,16 +42,68 @@ export default function DashboardPage() {
       },
       createdAt: new Date().toISOString()
     }
-  ]);
+  ];
 
+  const [tasks, setTasks] = useState<any[]>(defaultInitialTasks);
+  const [exterminatedCount, setExterminatedCount] = useState(0);
   const [standupModalOpen, setStandupModalOpen] = useState(false);
 
+  // Persistent Task Queue & Extermination Registry Sync
+  useEffect(() => {
+    const savedExterminated = localStorage.getItem('sparkhq_exterminated_ids');
+    let exterminatedIds: string[] = [];
+    if (savedExterminated) {
+      try {
+        exterminatedIds = JSON.parse(savedExterminated);
+        setExterminatedCount(exterminatedIds.length);
+      } catch (e) {
+        exterminatedIds = [];
+      }
+    }
+
+    const savedTasks = localStorage.getItem('sparkhq_active_tasks');
+    if (savedTasks) {
+      try {
+        const parsed = JSON.parse(savedTasks);
+        const filtered = parsed.filter((t: any) => !exterminatedIds.includes(t.id));
+        setTasks(filtered);
+      } catch (e) {
+        const filtered = defaultInitialTasks.filter((t: any) => !exterminatedIds.includes(t.id));
+        setTasks(filtered);
+      }
+    } else {
+      const filtered = defaultInitialTasks.filter((t: any) => !exterminatedIds.includes(t.id));
+      setTasks(filtered);
+    }
+  }, []);
+
   function handleGoalDispatched(newTask: any) {
-    setTasks((prev) => [newTask, ...prev]);
+    setTasks((prev) => {
+      const updated = [newTask, ...prev];
+      localStorage.setItem('sparkhq_active_tasks', JSON.stringify(updated));
+      return updated;
+    });
   }
 
-  function handleActionComplete(taskId: string) {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  function handleActionComplete(taskId: string, isExterminated: boolean = false) {
+    if (isExterminated) {
+      const savedExterminated = localStorage.getItem('sparkhq_exterminated_ids');
+      let exterminatedIds: string[] = [];
+      if (savedExterminated) {
+        try { exterminatedIds = JSON.parse(savedExterminated); } catch (e) { exterminatedIds = []; }
+      }
+      if (!exterminatedIds.includes(taskId)) {
+        exterminatedIds.push(taskId);
+        localStorage.setItem('sparkhq_exterminated_ids', JSON.stringify(exterminatedIds));
+        setExterminatedCount(exterminatedIds.length);
+      }
+    }
+
+    setTasks((prev) => {
+      const updated = prev.filter((t) => t.id !== taskId);
+      localStorage.setItem('sparkhq_active_tasks', JSON.stringify(updated));
+      return updated;
+    });
   }
 
   const pendingApprovals = tasks.filter((t) => t.status === 'AWAITING_APPROVAL' || t.status === 'IN_PROGRESS');
@@ -101,7 +153,7 @@ export default function DashboardPage() {
                 href="/billing"
                 className="text-xs font-bold text-amber-300 hover:text-white px-3.5 py-2 rounded-xl bg-amber-950/50 border border-amber-800/60 flex items-center gap-1.5 transition-all shadow-md"
               >
-                <span>☕ Buy Me a Coffee</span>
+                <span>☕ Support Open Source</span>
               </a>
               <button
                 onClick={() => setStandupModalOpen(true)}
@@ -140,7 +192,7 @@ export default function DashboardPage() {
                 <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
                   <div>
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Exterminated Tasks</p>
-                    <h3 className="text-2xl font-extrabold text-rose-400 mt-1">0 Purged</h3>
+                    <h3 className="text-2xl font-extrabold text-rose-400 mt-1">{exterminatedCount} Purged</h3>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-800/40 flex items-center justify-center text-rose-400 text-lg shadow-md">
                     ☠️
@@ -189,7 +241,7 @@ export default function DashboardPage() {
                       </div>
                       <h4 className="font-bold text-slate-200 text-base mb-1">Queue Clean & Clear</h4>
                       <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                        All agent tasks have been reviewed and executed. Dispatch a new founder goal above to generate new work!
+                        All agent tasks have been reviewed or exterminated. Dispatch a new founder goal above to generate new work!
                       </p>
                     </div>
                   ) : (
@@ -201,7 +253,7 @@ export default function DashboardPage() {
                         description={task.description}
                         assignedTo={task.assignedTo}
                         outputPayload={task.outputPayload}
-                        onActionComplete={() => handleActionComplete(task.id)}
+                        onActionComplete={(decision) => handleActionComplete(task.id, decision === 'EXTERMINATED')}
                       />
                     ))
                   )}
@@ -227,7 +279,7 @@ export default function DashboardPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-rose-400 font-bold">•</span>
-                        <span><strong>Task Exterminator:</strong> Purge unwanted agent tasks from queue with 1 click.</span>
+                        <span><strong>Persistent Task Exterminator:</strong> Purge unwanted agent tasks permanently across page reloads.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-blue-400 font-bold">•</span>
@@ -273,7 +325,7 @@ Owner: Founder Dhruv Mishra (Open Source Core)
 2. Open Source & Vault Status
 - GitHub Repository: Philioraptor/SparkHQ (Public Open Source)
 - Vault AI Chat Agent: Active. Users chat to parse & store Gemini, GitHub, & LinkedIn keys.
-- Task Exterminator: Enabled for 1-click purging.
+- Task Exterminator: Persistent state lock active across page reloads.
 
 3. System Audit & Backoff Log
 - Self-Healing Loop: 0 manual support tickets required.
