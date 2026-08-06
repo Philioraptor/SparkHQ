@@ -14,6 +14,7 @@ export default function ApiKeyVault() {
   const [githubToken, setGithubToken] = useState('');
   const [githubOwner, setGithubOwner] = useState('');
   const [githubRepo, setGithubRepo] = useState('');
+  const [linkedinAccessToken, setLinkedinAccessToken] = useState('');
   const [linkedinClientId, setLinkedinClientId] = useState('');
   const [linkedinClientSecret, setLinkedinClientSecret] = useState('');
   const [instagramToken, setInstagramToken] = useState('');
@@ -25,7 +26,7 @@ export default function ApiKeyVault() {
     {
       id: 'msg-welcome',
       sender: 'AGENT',
-      text: "👋 Hi! I'm your Vault AI Agent. Paste your API keys here (Gemini, GitHub, LinkedIn, Instagram, OpenAI) or simply say 'Here are my keys: ...' and I will automatically parse and save them safely into your browser vault!",
+      text: "👋 Hi! I'm your Vault AI Agent. Paste your API keys or LinkedIn Access Token here (Gemini, GitHub, LinkedIn, Instagram, OpenAI) and I will automatically parse and save them safely into your browser vault!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -41,6 +42,7 @@ export default function ApiKeyVault() {
         setGithubToken(parsed.githubToken || '');
         setGithubOwner(parsed.githubOwner || '');
         setGithubRepo(parsed.githubRepo || '');
+        setLinkedinAccessToken(parsed.linkedinAccessToken || '');
         setLinkedinClientId(parsed.linkedinClientId || '');
         setLinkedinClientSecret(parsed.linkedinClientSecret || '');
         setInstagramToken(parsed.instagramToken || '');
@@ -74,7 +76,6 @@ export default function ApiKeyVault() {
     setChatMessages((prev) => [...prev, newMsg]);
     setChatInput('');
 
-    // Parse keys using regex patterns
     const detected: string[] = [];
     const updatePayload: any = {};
 
@@ -94,12 +95,12 @@ export default function ApiKeyVault() {
       detected.push('GitHub Personal Token');
     }
 
-    // 3. LinkedIn Secrets Detection
-    const linkedinSecretMatch = userText.match(/WPL_[a-zA-Z0-9._=]{20,40}/);
-    if (linkedinSecretMatch) {
-      setLinkedinClientSecret(linkedinSecretMatch[0]);
-      updatePayload.linkedinClientSecret = linkedinSecretMatch[0];
-      detected.push('LinkedIn Client Secret');
+    // 3. LinkedIn Access Token / Secrets Detection
+    const linkedinTokenMatch = userText.match(/(?:AQ[a-zA-Z0-9_-]{100,300}|WPL_[a-zA-Z0-9._=]{20,40})/);
+    if (linkedinTokenMatch) {
+      setLinkedinAccessToken(linkedinTokenMatch[0]);
+      updatePayload.linkedinAccessToken = linkedinTokenMatch[0];
+      detected.push('LinkedIn OAuth Access Token');
     }
 
     const linkedinIdMatch = userText.match(/77[a-zA-Z0-9]{12,18}/);
@@ -117,16 +118,15 @@ export default function ApiKeyVault() {
       detected.push('OpenAI API Key');
     }
 
-    // Save detected keys
     if (detected.length > 0) {
       saveToVault(updatePayload);
     }
 
     let agentResponseText = "";
     if (detected.length > 0) {
-      agentResponseText = `🔒 Parsed & Saved: ${detected.join(', ')} into your isolated vault! You can now start using SparkHQ for free! 🚀`;
+      agentResponseText = `🔒 Parsed & Saved: ${detected.join(', ')} into your isolated vault! CMO Agent will now auto-post live to LinkedIn! 🚀`;
     } else {
-      agentResponseText = "Got it! I stored your key text in your browser vault. You can also inspect or edit your keys in the 'Manual Inputs' view anytime!";
+      agentResponseText = "Got it! Saved key text in your browser vault. You can inspect or edit keys in the 'Manual Inputs' tab anytime!";
       saveToVault({ rawUserNote: userText });
     }
 
@@ -150,6 +150,7 @@ export default function ApiKeyVault() {
       githubToken: githubToken.trim(),
       githubOwner: githubOwner.trim() || 'Philioraptor',
       githubRepo: githubRepo.trim() || 'SparkHQ',
+      linkedinAccessToken: linkedinAccessToken.trim(),
       linkedinClientId: linkedinClientId.trim(),
       linkedinClientSecret: linkedinClientSecret.trim(),
       instagramToken: instagramToken.trim(),
@@ -167,7 +168,7 @@ export default function ApiKeyVault() {
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-slate-100">Personal API Key Vault (BYOK)</h2>
-            <p className="text-xs text-slate-400">Browser Vault Agent • Gemini, GitHub, LinkedIn, Instagram & OpenAI Keys</p>
+            <p className="text-xs text-slate-400">Browser Vault Agent • Gemini, GitHub, LinkedIn Access Token, & OpenAI Keys</p>
           </div>
         </div>
 
@@ -223,7 +224,7 @@ export default function ApiKeyVault() {
           <form onSubmit={handleAgentChatSubmit} className="flex gap-2">
             <input
               type="text"
-              placeholder="Paste or tell me your API keys (e.g. Gemini, GitHub, LinkedIn, Instagram)..."
+              placeholder="Paste or tell me your API keys / LinkedIn Token..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               className="flex-1 bg-slate-950 text-xs text-slate-100 p-3.5 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 font-mono"
@@ -242,7 +243,7 @@ export default function ApiKeyVault() {
       {/* MODE 2: MANUAL FIELDS INPUT */}
       {inputMode === 'MANUAL' && (
         <form onSubmit={handleSaveManual} className="space-y-4">
-          {/* Gemini & OpenAI */}
+          {/* Gemini & LinkedIn Access Token */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
@@ -258,14 +259,14 @@ export default function ApiKeyVault() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                OpenAI / Custom AI Model Key
+                LinkedIn OAuth Access Token (w_member_social)
               </label>
               <input
                 type="password"
-                placeholder="sk-..."
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
-                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-purple-500 font-mono"
+                placeholder="AQ... (Your LinkedIn Access Token)"
+                value={linkedinAccessToken}
+                onChange={(e) => setLinkedinAccessToken(e.target.value)}
+                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
           </div>
@@ -310,15 +311,15 @@ export default function ApiKeyVault() {
             </div>
           </div>
 
-          {/* LinkedIn & Instagram */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* LinkedIn App Credentials */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
                 LinkedIn Client ID
               </label>
               <input
                 type="text"
-                placeholder="77..."
+                placeholder="7737g0dxx6imer"
                 value={linkedinClientId}
                 onChange={(e) => setLinkedinClientId(e.target.value)}
                 className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
@@ -330,22 +331,10 @@ export default function ApiKeyVault() {
               </label>
               <input
                 type="password"
-                placeholder="WPL_..."
+                placeholder="WPL_AP1..."
                 value={linkedinClientSecret}
                 onChange={(e) => setLinkedinClientSecret(e.target.value)}
                 className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                Instagram / Meta Token
-              </label>
-              <input
-                type="password"
-                placeholder="EAAC..."
-                value={instagramToken}
-                onChange={(e) => setInstagramToken(e.target.value)}
-                className="w-full bg-slate-950 text-xs text-slate-100 p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-pink-500 font-mono"
               />
             </div>
           </div>
@@ -354,7 +343,7 @@ export default function ApiKeyVault() {
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-lg active:scale-95"
           >
-            Save All Keys 🔒
+            Save All Keys & LinkedIn Access Token 🔒
           </button>
         </form>
       )}
