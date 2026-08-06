@@ -1,42 +1,20 @@
 {
   "name": "sparkhq-c-suite",
   "version": "1.0.0",
-  "private": true,
-  "description": "Project SparkHQ - Autonomous AI C-Suite System for Single Founders",
+  "private": false,
+  "license": "MIT",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "workers/*"
+    "workers/*",
+    "packages/*"
   ],
   "scripts": {
-    "build:shared": "npm run build --prefix packages/shared-types",
-    "build:orchestrator": "npm run build --prefix apps/orchestrator-api",
-    "build:command-center": "npm run build --prefix apps/command-center",
-    "build:cto": "npm run build --prefix workers/cto-worker",
-    "build:cmo": "npm run build --prefix workers/cmo-worker",
-    "build:ceo": "npm run build --prefix workers/ceo-cron",
-    "build": "npm run build:shared && npm run build:orchestrator && npm run build:cto && npm run build:cmo && npm run build:ceo && npm run build:command-center",
-    "dev:orchestrator": "npm run dev --prefix apps/orchestrator-api",
     "dev:command-center": "npm run dev --prefix apps/command-center",
-    "dev:cto": "npm run dev --prefix workers/cto-worker",
-    "dev:cmo": "npm run dev --prefix workers/cmo-worker",
-    "prisma:generate": "prisma generate --schema=packages/database/prisma/schema.prisma",
-    "prisma:push": "prisma db push --schema=packages/database/prisma/schema.prisma"
-  },
-  "keywords": [
-    "ai-c-suite",
-    "agentic-ai",
-    "sparkhq",
-    "gemini",
-    "bullmq",
-    "nextjs",
-    "express"
-  ],
-  "author": "Dhruv Mishra <founder@sparkhq.ai>",
-  "license": "MIT",
-  "devDependencies": {
-    "prisma": "^5.19.0",
-    "typescript": "^5.3.3"
+    "build:command-center": "npm run build --prefix apps/command-center",
+    "build:shared": "npm run build --prefix packages/shared-types",
+    "build": "npm run build:shared && npm run build:command-center",
+    "prisma:generate": "cd packages/database && npx prisma generate",
+    "prisma:push": "cd packages/database && npx prisma db push"
   },
   "dependencies": {
     "razorpay": "^2.9.8"
