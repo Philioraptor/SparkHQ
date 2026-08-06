@@ -19,6 +19,7 @@ interface PlanTier {
   features: string[];
   recommended?: boolean;
   isFree?: boolean;
+  isCustom?: boolean;
 }
 
 export default function BillingPage() {
@@ -47,25 +48,12 @@ export default function BillingPage() {
     {
       id: 'starter',
       name: 'Starter Solopreneur',
-      priceDisplay: '₹3,999 / mo',
-      amountPaise: 399900,
-      description: 'Managed infrastructure for solo founders without API setup.',
-      features: [
-        'Managed Server API Keys Included',
-        '1 GitHub Repository Integration',
-        'CTO Agent PR Generator (25 PRs/mo)',
-        'AI Customer Support Chatbot Widget'
-      ]
-    },
-    {
-      id: 'pro',
-      name: 'Pro Founder Plan',
-      priceDisplay: '₹11,999 / mo',
-      amountPaise: 1199900,
-      description: 'Full autonomous C-Suite for scaling founders.',
+      priceDisplay: '₹1,999 / mo',
+      amountPaise: 199900,
       recommended: true,
+      description: 'Full autonomous C-Suite using your own API keys.',
       features: [
-        'Multi-Repo Central Router',
+        'Exact ₹1,999/mo Solopreneur Rate',
         'CTO Code + CMO LinkedIn Worker Engines',
         'LinkedIn Feed Auto-Publishing API',
         'Self-Healing Bug Fix Loop',
@@ -74,17 +62,18 @@ export default function BillingPage() {
       ]
     },
     {
-      id: 'agency',
+      id: 'enterprise',
       name: 'Venture Studio / Agency',
-      priceDisplay: '₹39,999 / mo',
-      amountPaise: 3999900,
+      priceDisplay: 'Contact Developer',
+      amountPaise: 0,
+      isCustom: true,
       description: 'For accelerators and multi-product venture studios.',
       features: [
-        'Unlimited GitHub Repositories',
+        'Custom Multi-Agent Deployments',
+        'Unlimited Repositories & Workspaces',
         'White-Label AI C-Suite Dashboard',
-        '10 Portfolio Founder Seats',
-        'Priority Self-Healing Support',
-        'Custom Webhooks & Database Event Logs'
+        'Custom Dedicated API Vault Setup',
+        'Direct Developer Contact & Support'
       ]
     }
   ];
@@ -97,6 +86,12 @@ export default function BillingPage() {
     if (plan.isFree) {
       setActiveSubscription(plan.name);
       setPaymentSuccessMsg(`🎉 Free BYOK Tier Activated! Manage your personal API keys in the Vault tab.`);
+      setLoadingPlan(null);
+      return;
+    }
+
+    if (plan.isCustom) {
+      window.location.href = 'mailto:founder@sparkhq.ai?subject=SparkHQ%20Enterprise%20Custom%20Quote%20Request';
       setLoadingPlan(null);
       return;
     }
@@ -192,7 +187,7 @@ export default function BillingPage() {
 
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight">Self-Service Subscriptions & BYOK Tiers</h1>
@@ -223,11 +218,11 @@ export default function BillingPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">💳</span>
-                <h3 className="text-base font-bold text-slate-100">Razorpay Live Production Gateway Connected!</h3>
+                <span className="text-xl">⚡</span>
+                <h3 className="text-base font-bold text-slate-100">BYOK Solo Founder Pricing</h3>
               </div>
               <p className="text-xs text-slate-400">
-                Live Key ID: <code className="text-emerald-400 font-mono">rzp_live_TMBqGRFBGmtaMH</code> • Accepts Real UPI, GPay, PhonePe, Cards & Netbanking
+                Solopreneur Rate: <code className="text-emerald-400 font-bold font-mono">₹1,999 / mo</code> • Users bring their own API keys for zero markups!
               </p>
             </div>
 
@@ -236,14 +231,14 @@ export default function BillingPage() {
                 onClick={() => handleActivatePlan(plans[0])}
                 className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold px-5 py-3 rounded-xl text-xs shadow-xl shadow-emerald-950/60 transition-all active:scale-95 flex items-center gap-1.5"
               >
-                <span>⚡ Activate Free BYOK Tier (₹0)</span>
+                <span>⚡ Select Free BYOK Tier (₹0)</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* 4 Pricing Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* 3 Pricing Plan Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -271,10 +266,10 @@ export default function BillingPage() {
                 <h3 className="text-base font-bold text-slate-100">{plan.name}</h3>
                 <p className="text-xs text-slate-400 mt-1 min-h-[36px]">{plan.description}</p>
                 <div className="my-4">
-                  <span className="text-2xl font-black text-slate-100 tracking-tight">{plan.priceDisplay}</span>
+                  <span className="text-3xl font-black text-slate-100 tracking-tight">{plan.priceDisplay}</span>
                 </div>
 
-                <ul className="space-y-2 text-[11px] text-slate-300 border-t border-slate-800/80 pt-4 mb-6">
+                <ul className="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4 mb-6">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-1.5">
                       <span className={plan.isFree ? "text-emerald-400 font-bold" : "text-blue-400 font-bold"}>•</span>
@@ -288,7 +283,7 @@ export default function BillingPage() {
                 <button
                   onClick={() => handleActivatePlan(plan)}
                   disabled={loadingPlan === plan.id}
-                  className={`w-full font-extrabold py-3 rounded-xl text-xs transition-all shadow-lg active:scale-95 ${
+                  className={`w-full font-extrabold py-3.5 rounded-xl text-xs transition-all shadow-lg active:scale-95 ${
                     plan.isFree
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-950/50'
                       : plan.recommended
@@ -296,7 +291,11 @@ export default function BillingPage() {
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60'
                   }`}
                 >
-                  {plan.isFree ? '⚡ Select Free BYOK Tier (₹0)' : `Pay & Subscribe (${plan.priceDisplay})`}
+                  {plan.isFree
+                    ? '⚡ Select Free BYOK Tier (₹0)'
+                    : plan.isCustom
+                    ? '📧 Contact Developer'
+                    : `Subscribe via Razorpay (${plan.priceDisplay})`}
                 </button>
               </div>
             </div>
