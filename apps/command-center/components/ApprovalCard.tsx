@@ -25,25 +25,40 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
       if (decision === 'REJECTED') eventType = 'FOUNDER_REJECTED';
       if (decision === 'EXTERMINATED') eventType = 'FOUNDER_KILLED';
 
-      await fetch('/api/v1/router/event', {
+      // Read local isolated vault credentials to pass securely with approval event
+      let userVault = {};
+      try {
+        const rawVault = localStorage.getItem('sparkhq_user_api_vault');
+        if (rawVault) userVault = JSON.parse(rawVault);
+      } catch (e) {
+        userVault = {};
+      }
+
+      const res = await fetch('/api/v1/router/event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           source: 'COMMAND_CENTER',
           eventType: eventType,
           taskId,
-          payload: { feedbackNote: feedback }
+          payload: {
+            feedbackNote: feedback,
+            userVault
+          }
         })
       });
+
+      const resData = await res.json();
 
       let msg = '✅ Execution Triggered';
       if (decision === 'REJECTED') msg = '❌ Revision Enqueued';
       if (decision === 'EXTERMINATED') msg = '☠️ Task Exterminated & Purged';
+      if (resData.message) msg = resData.message;
 
       setActionDoneMessage(msg);
       setTimeout(() => {
         onActionComplete(decision);
-      }, 1000);
+      }, 1500);
     } catch (err) {
       console.error('Decision dispatch error:', err);
       let msg = '✅ Execution Triggered';
@@ -53,7 +68,7 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
       setActionDoneMessage(msg);
       setTimeout(() => {
         onActionComplete(decision);
-      }, 1000);
+      }, 1500);
     } finally {
       setLoading(false);
     }
@@ -116,7 +131,7 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
       )}
 
       {actionDoneMessage ? (
-        <div className="mt-4 p-3 rounded-xl bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-sm font-medium text-center animate-fade-in font-mono">
+        <div className="mt-4 p-3 rounded-xl bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-sm font-medium text-center animate-fade-in font-mono leading-relaxed">
           {actionDoneMessage}
         </div>
       ) : showExterminateConfirm ? (
@@ -175,7 +190,7 @@ export default function ApprovalCard({ taskId, title, assignedTo, description, o
             disabled={loading}
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-4 py-2.5 rounded-xl text-sm flex-1 shadow-lg shadow-emerald-950/40 transition-all active:scale-[0.98]"
           >
-            {loading ? 'Processing...' : 'Approve & Execute'}
+            {loading ? 'Publishing...' : 'Approve & Publish to Feed 🚀'}
           </button>
 
           <button

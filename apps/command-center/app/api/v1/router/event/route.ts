@@ -51,6 +51,9 @@ export async function POST(request: Request) {
     const rawEvent = await request.json();
     console.log('[Vercel Event Router]', rawEvent.eventType, rawEvent.source);
 
+    const userVault = rawEvent.payload?.userVault || {};
+    let customResponseMessage = '';
+
     const mockDb = {
       systemLog: {
         create: async ({ data }: any) => {
@@ -81,7 +84,7 @@ export async function POST(request: Request) {
         add: async (jobName: string, data: any) => {
           if (jobName === 'generate-code') {
             try {
-              const prResult = await processCtoTask(data.prompt);
+              const prResult = await processCtoTask(data.prompt, userVault);
               const task = memoryTasks.find(t => t.id === data.taskId);
               if (task) {
                 task.status = 'AWAITING_APPROVAL';
@@ -104,7 +107,7 @@ export async function POST(request: Request) {
         add: async (jobName: string, data: any) => {
           if (jobName === 'generate-copy') {
             try {
-              const draftResult = await processCmoTask(data.prompt);
+              const draftResult = await processCmoTask(data.prompt, userVault);
               const task = memoryTasks.find(t => t.id === data.taskId);
               if (task) {
                 task.status = 'AWAITING_APPROVAL';
@@ -121,11 +124,13 @@ export async function POST(request: Request) {
               console.error('[Vercel CMO Worker Error]', e);
             }
           } else if (jobName === 'publish-linkedin') {
-            // Founder Approved -> Execute Auto-Posting to LinkedIn!
+            // Founder Approved -> Execute Auto-Posting with User BYOK Vault Credentials!
             try {
               const task = memoryTasks.find(t => t.id === data.taskId);
               const postText = task?.outputPayload?.postText || data.payload?.postText || "New Technical Update from SparkHQ";
-              const publishResult = await publishLinkedInPost(postText);
+              
+              const publishResult = await publishLinkedInPost(postText, userVault);
+              customResponseMessage = publishResult.message || '🎉 LinkedIn Post Auto-Published!';
               
               if (task) {
                 task.status = 'COMPLETED';
@@ -139,7 +144,7 @@ export async function POST(request: Request) {
                 id: `log-${Date.now()}`,
                 agentRole: 'CMO_WORKER',
                 action: 'LINKEDIN_POST_PUBLISHED',
-                details: `Published to LinkedIn Feed: ${publishResult.postUrl}`,
+                details: `${publishResult.message} (${publishResult.postUrl})`,
                 createdAt: new Date().toISOString()
               });
             } catch (e) {
@@ -151,7 +156,7 @@ export async function POST(request: Request) {
     };
 
     const result = await routeMultiRepoEvent(rawEvent, mockDb, mockQueues);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, message: customResponseMessage || (result as any).message });
   } catch (error: any) {
     console.error('[Vercel Event Router Error]', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 400 });
