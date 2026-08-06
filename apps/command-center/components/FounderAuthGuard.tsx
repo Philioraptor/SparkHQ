@@ -26,6 +26,7 @@ export default function FounderAuthGuard({ children }: FounderAuthGuardProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    // Persist Chairman & User Auth State on Mount & Refresh
     const savedUser = localStorage.getItem('sparkhq_user_profile');
     if (savedUser) {
       try {
@@ -228,7 +229,7 @@ export default function FounderAuthGuard({ children }: FounderAuthGuardProps) {
 
           <div className="mt-6 pt-6 border-t border-slate-800/80 text-center">
             <p className="text-[10px] text-slate-500 font-mono">
-              Strict Multi-Tenant Encryption Active • Isolated Keys & Workspaces
+              Strict Multi-Tenant Encryption Active • Persistent Session Storage
             </p>
           </div>
         </div>

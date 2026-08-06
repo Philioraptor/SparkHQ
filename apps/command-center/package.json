@@ -11,6 +11,7 @@
     "@google/genai": "^2.15.0",
     "@octokit/rest": "^20.0.2",
     "@sparkhq/shared-types": "file:../../packages/shared-types",
+    "@upstash/redis": "^1.38.2",
     "lucide-react": "^0.330.0",
     "next": "^14.1.0",
     "razorpay": "^2.9.8",

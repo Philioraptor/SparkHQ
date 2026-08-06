@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AuditLog {
   id: string;
@@ -13,79 +13,95 @@ interface AuditLog {
 export default function AuditTicker() {
   const [logs, setLogs] = useState<AuditLog[]>([
     {
-      id: 'log-seed-1',
-      agentRole: 'CEO',
-      action: 'FOUNDER_GOAL_SUBMITTED',
-      details: 'Dispatched Stripe Checkout goal to CTO Queue',
-      createdAt: new Date(Date.now() - 300000).toISOString()
+      id: 'log-1',
+      agentRole: 'SYSTEM_ROUTER',
+      action: 'EVENT_ROUTED',
+      details: 'Routed FOUNDER_GOAL_SUBMITTED to CTO Worker Queue',
+      createdAt: new Date(Date.now() - 60000).toISOString()
     },
     {
-      id: 'log-seed-2',
+      id: 'log-2',
       agentRole: 'CTO_WORKER',
       action: 'CTO_PR_RAISED',
-      details: 'Created PR #42 (feature/stripe-checkout)',
-      createdAt: new Date(Date.now() - 120000).toISOString()
+      details: 'Generated feature/stripe-checkout branch & opened GitHub PR #42',
+      createdAt: new Date(Date.now() - 30000).toISOString()
     },
     {
-      id: 'log-seed-3',
+      id: 'log-3',
       agentRole: 'CMO_WORKER',
       action: 'CMO_DRAFT_CREATED',
-      details: 'LinkedIn Post Draft ready for founder review',
-      createdAt: new Date(Date.now() - 60000).toISOString()
+      details: 'Drafted B2B launch announcement for LinkedIn feed',
+      createdAt: new Date(Date.now() - 10000).toISOString()
     }
   ]);
 
+  const [isLive, setIsLive] = useState(true);
+
   useEffect(() => {
-    async function fetchLogs() {
+    // 3-Second Client Polling for Vercel Serverless Reliability (Replaces SSE)
+    const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/v1/stream/logs');
-        if (res.ok) {
-          const data = await res.json();
+        const response = await fetch('/api/v1/stream/logs', {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (response.ok) {
+          const data = await response.json();
           if (Array.isArray(data) && data.length > 0) {
-            setLogs(data);
+            setLogs((prev) => {
+              const existingIds = new Set(prev.map((l) => l.id));
+              const newLogs = data.filter((l: AuditLog) => !existingIds.has(l.id));
+              if (newLogs.length > 0) {
+                return [...newLogs, ...prev];
+              }
+              return prev;
+            });
           }
         }
-      } catch (e) {
-        console.warn('Vercel logs fetch warning:', e);
+      } catch (err) {
+        // Silent polling fallback
       }
-    }
+    }, 3000);
 
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="glass-card rounded-xl p-5 shadow-xl border border-slate-800">
-      <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2.5">
+    <div className="glass-card rounded-2xl p-5 border border-slate-800/90 glow-border">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-            Live Vercel Serverless Audit Stream
+          <span className={`w-2.5 h-2.5 rounded-full ${isLive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`}></span>
+          <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+            Live System Audit Stream
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-slate-500">Vercel API Logs</span>
+        <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+          3s Polling Sync
+        </span>
       </div>
 
-      <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+      <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 font-mono text-xs">
         {logs.map((log) => (
-          <div key={log.id} className="bg-slate-950/80 p-3 rounded-lg border border-slate-800/60 flex items-start justify-between gap-3 text-xs">
-            <div className="flex items-start gap-2.5">
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono ${
-                log.agentRole.includes('CTO') ? 'bg-cyan-950 text-cyan-400 border border-cyan-800/40' :
-                log.agentRole.includes('CMO') ? 'bg-purple-950 text-purple-400 border border-purple-800/40' :
+          <div
+            key={log.id}
+            className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition-all flex flex-col gap-1"
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${
+                log.agentRole === 'CTO_WORKER' ? 'bg-cyan-950 text-cyan-400 border border-cyan-800/40' :
+                log.agentRole === 'CMO_WORKER' ? 'bg-purple-950 text-purple-400 border border-purple-800/40' :
+                log.agentRole === 'BILLING' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/40' :
                 'bg-blue-950 text-blue-400 border border-blue-800/40'
               }`}>
                 {log.agentRole}
               </span>
-              <div>
-                <span className="font-semibold text-slate-200 font-mono">{log.action}</span>
-                <p className="text-slate-400 mt-0.5 font-mono text-[11px]">{log.details}</p>
-              </div>
+              <span className="text-[10px] text-slate-500">
+                {new Date(log.createdAt).toLocaleTimeString()}
+              </span>
             </div>
-            <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
-              {new Date(log.createdAt).toLocaleTimeString()}
-            </span>
+
+            <p className="text-slate-300 text-[11px] leading-relaxed mt-0.5">
+              <strong className="text-slate-100 font-semibold">{log.action}:</strong> {log.details}
+            </p>
           </div>
         ))}
       </div>
