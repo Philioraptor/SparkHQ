@@ -1,45 +1,34 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-const PACK_BUCKET = process.env.PACK_BUCKET || 'pack';
-const PACK_FILE = process.env.PACK_FILE || 'developer-prompt-workflow-pack.pdf';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Developer Pack <pack@sparkhq.ai>';
-
-async function fetchPackPdf(): Promise<Buffer | null> {
+async function storeOrder(payload: {
+  order_id: string;
+  payment_id: string;
+  email?: string;
+  token: string;
+}): Promise<boolean> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) return null;
+  if (!supabaseUrl || !serviceKey) return false;
   try {
-    const res = await fetch(`${supabaseUrl}/storage/v1/object/${PACK_BUCKET}/${PACK_FILE}`, {
-      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
-    });
-    if (!res.ok) return null;
-    return Buffer.from(await res.arrayBuffer());
-  } catch (e) {
-    console.error('[Delivery] PDF fetch failed', e);
-    return null;
-  }
-}
-
-async function sendDeliveryEmail(email: string, pdf: Buffer): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || !email) return false;
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch(`${supabaseUrl}/rest/v1/pack_orders`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
       body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [email],
-        subject: 'Your Developer Prompt & Workflow Pack — download attached',
-        text:
-          'Hi!\n\nThanks for grabbing the Developer Prompt & Workflow Pack.\n\nYour file is attached — save it. Every prompt works in any capable LLM (Claude, ChatGPT, Cursor): paste your error, get one actionable fix.\n\nIf one prompt doesn\'t save you a debugging session in the first week, reply to this email for a full refund. No questions.\n\n— Dhruv',
-        attachments: [{ filename: PACK_FILE, content: pdf.toString('base64') }],
+        order_id: payload.order_id,
+        payment_id: payload.payment_id,
+        email: payload.email ?? null,
+        token: payload.token,
       }),
     });
     return res.ok;
   } catch (e) {
-    console.error('[Delivery] Email send failed', e);
+    console.error('[Delivery] Order store failed', e);
     return false;
   }
 }
@@ -72,18 +61,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Payment signature verification failed. Mismatch detected.' }, { status: 400 });
     }
 
-    // Payment verified — deliver the pack
-    let emailStatus = 'skipped';
-    if (customerEmail) {
-      const pdf = await fetchPackPdf();
-      if (pdf) {
-        emailStatus = (await sendDeliveryEmail(customerEmail, pdf)) ? 'sent' : 'failed';
-      } else {
-        emailStatus = 'failed_pdf';
-      }
-    }
-    if (emailStatus !== 'sent') {
-      console.warn(`[Delivery] emailStatus=${emailStatus} for order ${razorpay_order_id} (${customerEmail || 'no email'})`);
+    // Payment verified — create a one-time-ish download token and store the order
+    const token = crypto.randomBytes(24).toString('hex'); // 48 hex chars, unguessable
+    const stored = await storeOrder({
+      order_id: razorpay_order_id,
+      payment_id: razorpay_payment_id,
+      email: customerEmail,
+      token,
+    });
+
+    if (!stored) {
+      console.error(`[Delivery] Order NOT stored for ${razorpay_order_id} — buyer cannot download yet`);
     }
 
     return NextResponse.json({
@@ -92,7 +80,8 @@ export async function POST(request: Request) {
       payment_id: razorpay_payment_id,
       order_id: razorpay_order_id,
       planName,
-      emailStatus,
+      token: stored ? token : null,
+      deliveryStatus: stored ? 'ready' : 'error',
     });
   } catch (error: any) {
     console.error('[Razorpay Signature Verification Error]', error);

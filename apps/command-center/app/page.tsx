@@ -67,6 +67,7 @@ const pricingPoints = [
 export default function SellingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -102,7 +103,7 @@ export default function SellingPage() {
         order_id: orderData.order_id,
         handler: async function (response: any) {
           try {
-            await fetch('/api/verify-payment', {
+            const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -113,12 +114,17 @@ export default function SellingPage() {
                 customerEmail: email,
               }),
             });
-            setSuccessMsg(
-              `Payment verified! Check your inbox — your download link is on its way to ${email || 'your email'}.`
-            );
+            const verifyData = await verifyRes.json();
+            if (verifyData.success && verifyData.token) {
+              setDownloadUrl(`/api/download?token=${verifyData.token}`);
+            } else {
+              setSuccessMsg(
+                `Payment received (ID: ${response.razorpay_payment_id}). Contact us if your download doesn't appear — we'll fix it fast.`
+              );
+            }
           } catch (err) {
             setSuccessMsg(
-              `Payment received (ID: ${response.razorpay_payment_id}). Your download link is being sent — contact us if it doesn't arrive.`
+              `Payment received (ID: ${response.razorpay_payment_id}). Contact us if your download doesn't appear — we'll fix it fast.`
             );
           }
         },
@@ -262,6 +268,22 @@ export default function SellingPage() {
                   {!loading && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </form>
+
+              {downloadUrl && (
+                <div className="mt-4 rounded-lg border border-emerald-700/50 bg-emerald-950/60 p-4 text-center">
+                  <p className="text-xs text-emerald-300">Payment verified. Your pack is ready.</p>
+                  <a
+                    href={downloadUrl}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400"
+                  >
+                    Download the pack
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                  <p className="mt-2 text-[11px] text-emerald-400/80">
+                    Keep this page — the link stays valid so you can re-download anytime.
+                  </p>
+                </div>
+              )}
 
               {successMsg && (
                 <div className="mt-4 rounded-lg border border-emerald-700/50 bg-emerald-950/60 p-3 text-xs text-emerald-300">
