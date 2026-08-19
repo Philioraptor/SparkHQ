@@ -110,6 +110,7 @@ export default function SellingPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 planName: PRODUCT_NAME,
+                customerEmail: email,
               }),
             });
             setSuccessMsg(
