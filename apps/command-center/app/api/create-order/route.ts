@@ -3,12 +3,13 @@ import Razorpay from 'razorpay';
 
 export async function POST(request: Request) {
   try {
-    const { amount, planName = 'Pro Founder Plan', currency = 'INR' } = await request.json();
+    const { amount, planName = 'Developer Prompt & Workflow Pack', currency = 'INR', customerEmail } = await request.json();
 
     const amountInPaise = Number(amount);
 
-    if (!amountInPaise || isNaN(amountInPaise) || amountInPaise < 100) {
-      return NextResponse.json({ success: false, error: 'Amount must be at least 100 paise (₹1)' }, { status: 400 });
+    // Fixed-price product: server enforces the exact price — never trust the client.
+    if (amountInPaise !== 34900) {
+      return NextResponse.json({ success: false, error: 'Invalid amount. The pack is ₹349 (34900 paise).' }, { status: 400 });
     }
 
     const keyId = process.env.RAZORPAY_KEY_ID || "rzp_live_TMBqGRFBGmtaMH";
@@ -31,7 +32,8 @@ export async function POST(request: Request) {
       receipt,
       notes: {
         planName,
-        platform: 'SparkHQ AI C-Suite'
+        platform: 'Developer Prompt & Workflow Pack',
+        ...(customerEmail ? { customerEmail } : {})
       }
     });
 

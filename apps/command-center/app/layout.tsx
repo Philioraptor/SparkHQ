@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Project SparkHQ - Founder Command Center',
-  description: 'Autonomous AI C-Suite System for Single Founders',
+  title: 'Developer Prompt & Workflow Pack — Fix n8n & Next.js in Minutes',
+  description: '5 Master Prompts + production configs that fix the most common n8n and Next.js failures. Paste your error, get one actionable fix.',
 };
 
 export default function RootLayout({

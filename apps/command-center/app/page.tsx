@@ -1,348 +1,294 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Header from '../components/Header';
-import GoalSubmissionConsole from '../components/GoalSubmissionConsole';
-import ApprovalCard from '../components/ApprovalCard';
-import AuditTicker from '../components/AuditTicker';
-import SupportChatWidget from '../components/SupportChatWidget';
-import FounderAuthGuard from '../components/FounderAuthGuard';
-import ApiKeyVault from '../components/ApiKeyVault';
+import { useState } from 'react';
+import Script from 'next/script';
+import {
+  ArrowRight,
+  Braces,
+  Check,
+  FileCode2,
+  Gauge,
+  RefreshCw,
+  Server,
+  ShieldCheck,
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'COMMAND' | 'VAULT'>('COMMAND');
-
-  const defaultInitialTasks = [
-    {
-      id: 'task-stripe-pr',
-      title: 'Goal: Build Next.js Stripe Checkout Component',
-      description: 'Design and write clean glassmorphism Stripe checkout page with Zod schema validation.',
-      assignedTo: 'CTO',
-      status: 'AWAITING_APPROVAL',
-      requiresApproval: true,
-      outputPayload: {
-        prUrl: 'https://github.com/sparkhq-ai/sparkhq-monorepo/pull/42',
-        branchName: 'feature/stripe-checkout',
-        repo: 'sparkhq-monorepo',
-        prTitle: 'feat: Stripe checkout glassmorphism component'
-      },
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'task-linkedin-draft',
-      title: 'Goal: Publish Launch Announcement B2B Post',
-      description: 'Write high-converting B2B LinkedIn post announcing AI C-Suite v1.0 release.',
-      assignedTo: 'CMO',
-      status: 'AWAITING_APPROVAL',
-      requiresApproval: true,
-      outputPayload: {
-        platform: 'LINKEDIN',
-        postText: '🚀 Excited to announce Project SparkHQ: The Autonomous AI C-Suite for Single Founders!\n\n100% Open Source & Free Forever! No open-ended agent chat loops. Pure 1-click binary approvals.\n\n✨ Key Highlights:\n- CTO Worker creates GitHub PRs automatically\n- CMO Worker generates viral technical B2B posts\n- CEO Standup cron delivers 9AM executive reports\n- AI Support Chatbot & Self-Healing Bug Fix Loop\n- BYOK Personal Vault AI Agent Chat Interface\n\nBuilt for single founders who scale standard operations to 100x speed.\n\n#ArtificialIntelligence #OpenSource #Founders #TechLeadership',
-        status: 'DRAFT_READY_FOR_APPROVAL'
-      },
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  const [tasks, setTasks] = useState<any[]>(defaultInitialTasks);
-  const [exterminatedCount, setExterminatedCount] = useState(0);
-  const [standupModalOpen, setStandupModalOpen] = useState(false);
-
-  // Persistent Task Queue & Extermination Registry Sync
-  useEffect(() => {
-    const savedExterminated = localStorage.getItem('sparkhq_exterminated_ids');
-    let exterminatedIds: string[] = [];
-    if (savedExterminated) {
-      try {
-        exterminatedIds = JSON.parse(savedExterminated);
-        setExterminatedCount(exterminatedIds.length);
-      } catch (e) {
-        exterminatedIds = [];
-      }
-    }
-
-    const savedTasks = localStorage.getItem('sparkhq_active_tasks');
-    if (savedTasks) {
-      try {
-        const parsed = JSON.parse(savedTasks);
-        const filtered = parsed.filter((t: any) => !exterminatedIds.includes(t.id));
-        setTasks(filtered);
-      } catch (e) {
-        const filtered = defaultInitialTasks.filter((t: any) => !exterminatedIds.includes(t.id));
-        setTasks(filtered);
-      }
-    } else {
-      const filtered = defaultInitialTasks.filter((t: any) => !exterminatedIds.includes(t.id));
-      setTasks(filtered);
-    }
-  }, []);
-
-  function handleGoalDispatched(newTask: any) {
-    setTasks((prev) => {
-      const updated = [newTask, ...prev];
-      localStorage.setItem('sparkhq_active_tasks', JSON.stringify(updated));
-      return updated;
-    });
+declare global {
+  interface Window {
+    Razorpay: any;
   }
+}
 
-  function handleActionComplete(taskId: string, isExterminated: boolean = false) {
-    if (isExterminated) {
-      const savedExterminated = localStorage.getItem('sparkhq_exterminated_ids');
-      let exterminatedIds: string[] = [];
-      if (savedExterminated) {
-        try { exterminatedIds = JSON.parse(savedExterminated); } catch (e) { exterminatedIds = []; }
+const PRODUCT_NAME = 'Developer Prompt & Workflow Pack';
+const PRODUCT_PRICE_PAISE = 34900; // ₹349
+
+const features = [
+  {
+    icon: Braces,
+    title: 'Opaque Errors, Solved',
+    desc: 'Master Prompt that traces the real failure behind "Unknown Error" and "Execution stopped at this node" — one fix, exact field path.',
+  },
+  {
+    icon: Gauge,
+    title: 'Memory & Scale Limits',
+    desc: 'Payload-audit prompt that finds what\'s eating RAM, plus queue-mode docker-compose for self-hosted n8n.',
+  },
+  {
+    icon: Server,
+    title: 'Self-Hosting Pain',
+    desc: 'Vercel-exit audit covering the 3 silent contracts: immutable deploys, sharp/image config, Server Actions keys.',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Upgrade & Dependency Drift',
+    desc: 'Migration audit prompt — changelog diff, usage scan, CI-parity check. Bans the "just downgrade" answer.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Vendor Lock-In, De-Risked',
+    desc: '3-phase plan: coupling audit, abstraction layer, half-day exit drill. Optionality, not migration theater.',
+  },
+  {
+    icon: FileCode2,
+    title: 'Production Configs',
+    desc: 'assetPrefix + BUILD_ID deploy fix, Server Actions key setup, image-optimizer loader, queue-mode Compose. Copy-paste, ship as-is.',
+  },
+];
+
+const pricingPoints = [
+  '5 Master Prompts — paste your error, get one actionable fix',
+  'Root causes + why the standard fixes fail',
+  'Production configs that deploy as-is',
+  'Hard rules that ban generic advice',
+  'Lifetime updates — free',
+  '7-day refund, no questions',
+];
+
+export default function SellingPage() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  async function handleBuy(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: PRODUCT_PRICE_PAISE,
+          planName: PRODUCT_NAME,
+          currency: 'INR',
+          customerEmail: email,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderData.success) {
+        throw new Error(orderData.error || 'Order creation failed');
       }
-      if (!exterminatedIds.includes(taskId)) {
-        exterminatedIds.push(taskId);
-        localStorage.setItem('sparkhq_exterminated_ids', JSON.stringify(exterminatedIds));
-        setExterminatedCount(exterminatedIds.length);
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: PRODUCT_NAME,
+        description: '₹349 — one-time payment',
+        order_id: orderData.order_id,
+        handler: async function (response: any) {
+          try {
+            await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                planName: PRODUCT_NAME,
+              }),
+            });
+            setSuccessMsg(
+              `Payment verified! Check your inbox — your download link is on its way to ${email || 'your email'}.`
+            );
+          } catch (err) {
+            setSuccessMsg(
+              `Payment received (ID: ${response.razorpay_payment_id}). Your download link is being sent — contact us if it doesn't arrive.`
+            );
+          }
+        },
+        prefill: {
+          email: email || undefined,
+        },
+        theme: {
+          color: '#F59E0B',
+        },
+      };
+
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       }
+    } catch (err: any) {
+      setErrorMsg(`Error starting checkout: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-
-    setTasks((prev) => {
-      const updated = prev.filter((t) => t.id !== taskId);
-      localStorage.setItem('sparkhq_active_tasks', JSON.stringify(updated));
-      return updated;
-    });
   }
-
-  const pendingApprovals = tasks.filter((t) => t.status === 'AWAITING_APPROVAL' || t.status === 'IN_PROGRESS');
 
   return (
-    <FounderAuthGuard>
-      <div className="min-h-screen bg-[#080B11] text-slate-100 pb-16 relative font-sans">
-        <Header />
+    <div className="min-h-screen bg-[#0A0A0A] text-neutral-50 antialiased">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          {/* Navigation Bar */}
-          <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-4 mb-8 gap-4">
-            <div className="flex gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
-              <button
-                onClick={() => setActiveTab('COMMAND')}
-                className={`text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 ${
-                  activeTab === 'COMMAND'
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-blue-950/50'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>⚡ Command Console & Approvals</span>
-                {pendingApprovals.length > 0 && (
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                    {pendingApprovals.length}
-                  </span>
-                )}
-              </button>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.07),transparent_55%)]" />
 
-              <button
-                onClick={() => setActiveTab('VAULT')}
-                className={`text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 ${
-                  activeTab === 'VAULT'
-                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-lg shadow-purple-950/50'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+      <main className="relative mx-auto max-w-6xl px-6">
+        {/* ============ HERO ============ */}
+        <section className="flex flex-col items-center pb-20 pt-28 text-center">
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium tracking-wide text-neutral-300">
+            5 Master Prompts · n8n + Next.js · Built from 50+ real failure posts
+          </span>
+
+          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+            You don&apos;t have an n8n problem.
+            <br />
+            <span className="text-neutral-500">You have a debugging problem.</span>
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400">
+            &ldquo;Execution stopped at this node.&rdquo; ChunkLoadError on a Friday deploy.
+            Build passes locally, CI fails. Each one is a 4-hour rabbit hole — this pack ends
+            them with copy-paste prompts and configs that ship as-is.
+          </p>
+
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+            <a
+              href="#pricing"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-neutral-200"
+            >
+              Get the Pack Now
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+            <a
+              href="#whats-inside"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-6 py-3.5 text-sm font-medium text-neutral-300 transition hover:border-white/30 hover:text-white"
+            >
+              See what&apos;s inside
+            </a>
+          </div>
+
+          <p className="mt-4 text-xs text-neutral-500">
+            ₹349 one-time · Not a course · No fluff · Instant delivery
+          </p>
+        </section>
+
+        {/* ============ WHAT'S INSIDE ============ */}
+        <section id="whats-inside" className="scroll-mt-24 pb-20">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              What&apos;s inside
+            </h2>
+            <p className="mt-3 text-neutral-400">
+              Five problems. One fix each. Fifteen minutes to install.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
+              <article
+                key={feature.title}
+                className="group rounded-xl border border-white/10 bg-white/[0.02] p-6 transition hover:border-white/20 hover:bg-white/[0.04]"
               >
-                <span>🔑 Vault AI Agent (BYOK Keys)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800/40 uppercase">
-                  Free BYOK
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <feature.icon className="h-5 w-5 text-neutral-200" aria-hidden="true" />
+                </div>
+                <h3 className="mb-2 font-semibold tracking-tight">{feature.title}</h3>
+                <p className="text-sm leading-relaxed text-neutral-400">{feature.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ PRICING / CHECKOUT ============ */}
+        <section id="pricing" className="scroll-mt-24 pb-24">
+          <div className="mx-auto max-w-md">
+            <div className="rounded-2xl border border-white/15 bg-white/[0.03] p-8 shadow-[0_0_60px_rgba(255,255,255,0.04)]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold tracking-tight">{PRODUCT_NAME}</h2>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-neutral-300">
+                  Launch price
                 </span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <a
-                href="/billing"
-                className="text-xs font-bold text-amber-300 hover:text-white px-3.5 py-2 rounded-xl bg-amber-950/50 border border-amber-800/60 flex items-center gap-1.5 transition-all shadow-md"
-              >
-                <span>☕ Support Open Source</span>
-              </a>
-              <button
-                onClick={() => setStandupModalOpen(true)}
-                className="text-xs font-bold text-blue-400 hover:text-blue-300 px-3.5 py-2 rounded-xl bg-blue-950/60 border border-blue-800/50 flex items-center gap-1.5 transition-all shadow-md"
-              >
-                <span>📊 CEO 9AM Standup</span>
-              </button>
-            </div>
-          </div>
-
-          {/* TAB 1: COMMAND CONSOLE & APPROVALS */}
-          {activeTab === 'COMMAND' && (
-            <>
-              {/* Metric Counter Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Awaiting Decisions</p>
-                    <h3 className="text-2xl font-extrabold text-amber-400 mt-1">{pendingApprovals.length} Tasks</h3>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-950/60 border border-amber-800/40 flex items-center justify-center text-amber-400 text-lg shadow-md">
-                    ⏳
-                  </div>
-                </div>
-
-                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">CTO Worker PRs</p>
-                    <h3 className="text-2xl font-extrabold text-cyan-400 mt-1">14 Raised</h3>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center text-cyan-400 text-lg shadow-md">
-                    🐙
-                  </div>
-                </div>
-
-                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Exterminated Tasks</p>
-                    <h3 className="text-2xl font-extrabold text-rose-400 mt-1">{exterminatedCount} Purged</h3>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-800/40 flex items-center justify-center text-rose-400 text-lg shadow-md">
-                    ☠️
-                  </div>
-                </div>
-
-                <div className="glass-card rounded-2xl p-5 border border-slate-800/90 flex items-center justify-between glow-border">
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Vault AI Agent</p>
-                    <button
-                      onClick={() => setActiveTab('VAULT')}
-                      className="mt-1 text-xs font-bold text-purple-400 hover:text-purple-300 underline flex items-center gap-1"
-                    >
-                      Chat & Add Keys 🔑
-                    </button>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center text-purple-400 text-lg shadow-md">
-                    🤖
-                  </div>
-                </div>
               </div>
 
-              {/* Goal Submission Console */}
-              <GoalSubmissionConsole onGoalDispatched={handleGoalDispatched} />
-
-              {/* Core Split View: Approval Inbox vs System Audit Stream */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: 1-Click Approval Queue */}
-                <div className="lg:col-span-7">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                      <h2 className="text-base font-bold text-slate-100 uppercase tracking-wider">
-                        1-Click Founder Approval Queue
-                      </h2>
-                    </div>
-                    <span className="text-xs text-slate-400 font-mono">
-                      {pendingApprovals.length} Pending
-                    </span>
-                  </div>
-
-                  {pendingApprovals.length === 0 ? (
-                    <div className="glass-card rounded-2xl p-12 text-center border border-slate-800">
-                      <div className="w-12 h-12 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 flex items-center justify-center mx-auto mb-3 text-xl shadow-lg">
-                        ✨
-                      </div>
-                      <h4 className="font-bold text-slate-200 text-base mb-1">Queue Clean & Clear</h4>
-                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                        All agent tasks have been reviewed or exterminated. Dispatch a new founder goal above to generate new work!
-                      </p>
-                    </div>
-                  ) : (
-                    pendingApprovals.map((task) => (
-                      <ApprovalCard
-                        key={task.id}
-                        taskId={task.id}
-                        title={task.title}
-                        description={task.description}
-                        assignedTo={task.assignedTo}
-                        outputPayload={task.outputPayload}
-                        onActionComplete={(decision) => handleActionComplete(task.id, decision === 'EXTERMINATED')}
-                      />
-                    ))
-                  )}
-                </div>
-
-                {/* Right Column: Live Audit Ticker & Architecture Badge */}
-                <div className="lg:col-span-5 space-y-6">
-                  <AuditTicker />
-
-                  {/* Open Source Principles Box */}
-                  <div className="glass-card rounded-2xl p-5 border border-slate-800/90 glow-border">
-                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
-                      SparkHQ Open Source Principles
-                    </h3>
-                    <ul className="space-y-2.5 text-xs text-slate-400">
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-400 font-bold">•</span>
-                        <span><strong>100% Open Source:</strong> Free forever. Contributions & Pull Requests welcome on GitHub!</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-purple-400 font-bold">•</span>
-                        <span><strong>Vault AI Agent Assistant:</strong> Chat naturally to parse & store your Gemini, GitHub, & LinkedIn keys.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-rose-400 font-bold">•</span>
-                        <span><strong>Persistent Task Exterminator:</strong> Purge unwanted agent tasks permanently across page reloads.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-blue-400 font-bold">•</span>
-                        <span><strong>Self-Healing Bug Loop:</strong> Support Bug Ticket ➔ CTO Agent PR ➔ 1-Click Founder Approval.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+              <div className="mt-6 flex items-baseline gap-3">
+                <span className="text-5xl font-semibold tracking-tight">₹349</span>
+                <span className="text-lg text-neutral-500 line-through">₹699</span>
+                <span className="text-sm text-neutral-500">≈ $4 USD</span>
               </div>
-            </>
-          )}
+              <p className="mt-1.5 text-sm text-neutral-500">
+                One-time payment. No subscription. Ever.
+              </p>
 
-          {/* TAB 2: PERSONAL API KEY VAULT (BYOK) */}
-          {activeTab === 'VAULT' && <ApiKeyVault />}
-        </main>
+              <ul className="mt-8 space-y-3">
+                {pricingPoints.map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-sm text-neutral-300">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-100" aria-hidden="true" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
 
-        {/* Embedded Floating AI Helpdesk Support Chatbot */}
-        <SupportChatWidget />
+              <form onSubmit={handleBuy} className="mt-8 space-y-4">
+                <input
+                  type="email"
+                  required
+                  placeholder="you@email.com — where we send the pack"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/30 focus:outline-none"
+                />
 
-        {/* CEO Executive Standup Modal */}
-        {standupModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="glass-card rounded-2xl max-w-2xl w-full p-6 border border-slate-700 shadow-2xl relative">
-              <button
-                onClick={() => setStandupModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white text-sm font-mono bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800"
-              >
-                ✕ ESC
-              </button>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xl">📊</span>
-                <h3 className="text-lg font-bold text-slate-100">CEO Daily Executive Standup</h3>
-              </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
-{`### Executive Standup Summary - ${new Date().toISOString().split('T')[0]}
-Owner: Founder Dhruv Mishra (Open Source Core)
-
-1. Key Milestones Completed (Past 24h)
-- CTO Worker: 3 GitHub Pull Requests merged (including Self-Healing Bug Fix PR #43).
-- CMO Worker: 2 B2B LinkedIn updates auto-published to feed.
-- Support Agent: 12 user queries resolved automatically (91.6% automation rate).
-
-2. Open Source & Vault Status
-- GitHub Repository: Philioraptor/SparkHQ (Public Open Source)
-- Vault AI Chat Agent: Active. Users chat to parse & store Gemini, GitHub, & LinkedIn keys.
-- Task Exterminator: Persistent state lock active across page reloads.
-
-3. System Audit & Backoff Log
-- Self-Healing Loop: 0 manual support tickets required.
-- PostgreSQL Prisma Audit: All events logged with zero-exhaustion database routing.`}
-              </div>
-              <div className="mt-5 text-right">
                 <button
-                  onClick={() => setStandupModalOpen(false)}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-all"
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:opacity-60"
                 >
-                  Close Report
+                  {loading ? 'Opening secure checkout...' : `Get the Pack Now — ₹349`}
+                  {!loading && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
                 </button>
-              </div>
+              </form>
+
+              {successMsg && (
+                <div className="mt-4 rounded-lg border border-emerald-700/50 bg-emerald-950/60 p-3 text-xs text-emerald-300">
+                  {successMsg}
+                </div>
+              )}
+
+              {errorMsg && (
+                <div className="mt-4 rounded-lg border border-red-800/60 bg-red-950/60 p-3 text-xs text-red-300">
+                  {errorMsg}
+                </div>
+              )}
+
+              <p className="mt-4 text-center text-xs text-neutral-500">
+                If one prompt doesn&apos;t save you a debugging session in the first week, get a
+                full refund.
+              </p>
             </div>
           </div>
-        )}
-      </div>
-    </FounderAuthGuard>
+        </section>
+      </main>
+
+      <footer className="border-t border-white/5 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 text-xs text-neutral-500 sm:flex-row">
+          <p>Built for developers who debug for a living.</p>
+          <p>© 2026 · Developer Prompt &amp; Workflow Pack</p>
+        </div>
+      </footer>
+    </div>
   );
 }
