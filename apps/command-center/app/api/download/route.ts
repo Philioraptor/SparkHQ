@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPlan } from '@/lib/plans';
 
-const PACK_BUCKET = process.env.PACK_BUCKET || 'pack';
+const PACK_BUCKET = process.env.PACK_BUCKET || 'developer-prompt-workflow-pack';
 
 // GET /api/download?token=<48-hex-token>&file=<object-name> → streams one purchased file
 export async function GET(request: Request) {

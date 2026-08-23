@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Server,
   ShieldCheck,
-  Zap,
 } from 'lucide-react';
 import { PLANS, PLAN_IDS, type PlanId } from '@/lib/plans';
 
@@ -68,7 +67,7 @@ const pricingPoints = [
 export default function SellingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('combo');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('prompt-pack');
   const [delivery, setDelivery] = useState<{ token: string; files: { file: string; label: string }[] } | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -193,7 +192,7 @@ export default function SellingPage() {
           </div>
 
           <p className="mt-4 text-xs text-neutral-500">
-            ₹299 per pack · ₹499 for both · One-time · Instant delivery
+            ₹299 · Both packs delivered · One-time · Instant delivery
           </p>
         </section>
 
@@ -229,14 +228,13 @@ export default function SellingPage() {
           <div className="mx-auto max-w-3xl">
             <div className="mb-8 text-center">
               <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Pick your pack</h2>
-              <p className="mt-3 text-neutral-400">One-time payment. No subscription. Instant delivery.</p>
+              <p className="mt-3 text-neutral-400">Pick either — every order delivers <span className="text-amber-300">both packs</span>. One-time. No subscription.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {PLAN_IDS.map((planId) => {
                 const p = PLANS[planId];
                 const active = selectedPlan === planId;
-                const isCombo = planId === 'combo';
                 return (
                   <button
                     key={planId}
@@ -248,17 +246,10 @@ export default function SellingPage() {
                         : 'border-white/10 bg-white/[0.02] hover:border-white/25'
                     }`}
                   >
-                    {isCombo && (
-                      <span className="absolute -top-2.5 right-4 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
-                        <Zap className="h-3 w-3" aria-hidden="true" /> Best value
-                      </span>
-                    )}
                     <h3 className="text-sm font-semibold tracking-tight">{p.shortLabel}</h3>
                     <div className="mt-3 flex items-baseline gap-2">
                       <span className="text-3xl font-semibold tracking-tight">₹{p.price / 100}</span>
-                      {isCombo && (
-                        <span className="text-sm text-neutral-500 line-through">₹598</span>
-                      )}
+                      <span className="text-sm text-neutral-500">+ both packs</span>
                     </div>
                     <p className="mt-2 text-xs leading-relaxed text-neutral-400">{p.blurb}</p>
                     <span className={`mt-4 inline-flex items-center gap-1.5 text-xs font-medium ${active ? 'text-amber-300' : 'text-neutral-500'}`}>
