@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { getPlan } from '@/lib/plans';
 
 export async function POST(request: Request) {
   try {
-    const { amount, planName = 'Developer Prompt & Workflow Pack', currency = 'INR', customerEmail } = await request.json();
+    const { planId, currency = 'INR', customerEmail } = await request.json();
 
-    const amountInPaise = Number(amount);
-
-    // Fixed-price product: server enforces the exact price — never trust the client.
-    if (amountInPaise !== 34900) {
-      return NextResponse.json({ success: false, error: 'Invalid amount. The pack is ₹349 (34900 paise).' }, { status: 400 });
+    // Server-enforced pricing: look up the plan, never trust client amounts.
+    const plan = getPlan(planId);
+    if (!plan) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid plan. Choose combo, prompt-pack or n8n-pack.' },
+        { status: 400 }
+      );
     }
 
     const keyId = process.env.RAZORPAY_KEY_ID || "rzp_live_TMBqGRFBGmtaMH";
@@ -27,23 +30,26 @@ export async function POST(request: Request) {
     const receipt = `rcpt_${Date.now().toString().slice(-8)}`;
 
     const order = await razorpay.orders.create({
-      amount: amountInPaise,
+      amount: plan.price,
       currency,
       receipt,
       notes: {
-        planName,
-        platform: 'Developer Prompt & Workflow Pack',
+        planId,
+        planName: plan.label,
+        platform: 'SparkHQ Command Center',
         ...(customerEmail ? { customerEmail } : {})
       }
     });
 
-    console.log('[Razorpay Live Order Created]', order.id, 'Amount:', order.amount);
+    console.log('[Razorpay Order Created]', order.id, plan.label, 'Amount:', order.amount);
 
     return NextResponse.json({
       success: true,
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
+      planId,
+      planName: plan.label,
       key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || keyId
     });
   } catch (error: any) {

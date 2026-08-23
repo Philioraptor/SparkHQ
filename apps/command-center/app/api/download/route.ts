@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
+import { getPlan } from '@/lib/plans';
 
 const PACK_BUCKET = process.env.PACK_BUCKET || 'pack';
-const PACK_FILE = process.env.PACK_FILE || 'developer-prompt-workflow-pack.pdf';
-const PACK_FILENAME = process.env.PACK_FILENAME || 'developer-prompt-workflow-pack.pdf';
 
-// GET /api/download?token=<48-hex-token> → streams the pack PDF to verified buyers
+// GET /api/download?token=<48-hex-token>&file=<object-name> → streams one purchased file
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
+  const file = searchParams.get('file') || 'developer-prompt-workflow-pack.pdf';
 
   if (!token || !/^[a-f0-9]{48}$/.test(token)) {
     return NextResponse.json({ success: false, error: 'Invalid download token' }, { status: 400 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   try {
     // 1. Is this token a real, verified order?
     const lookup = await fetch(
-      `${supabaseUrl}/rest/v1/pack_orders?token=eq.${token}&select=order_id`,
+      `${supabaseUrl}/rest/v1/pack_orders?token=eq.${token}&select=order_id,plan`,
       { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
     );
     if (!lookup.ok) {
@@ -33,19 +33,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid or expired download token' }, { status: 404 });
     }
 
-    // 2. Stream the PDF from private storage
-    const pdf = await fetch(`${supabaseUrl}/storage/v1/object/${PACK_BUCKET}/${PACK_FILE}`, {
+    // 2. Does this order's plan include the requested file?
+    const plan = getPlan(rows[0].plan) || getPlan('prompt-pack')!;
+    if (!plan.files.includes(file)) {
+      return NextResponse.json({ success: false, error: 'File not included in this order' }, { status: 403 });
+    }
+
+    // 3. Stream the file from private storage
+    const obj = await fetch(`${supabaseUrl}/storage/v1/object/${PACK_BUCKET}/${file}`, {
       headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
     });
-    if (!pdf.ok) {
+    if (!obj.ok) {
       return NextResponse.json({ success: false, error: 'Pack file unavailable' }, { status: 500 });
     }
 
-    const bytes = Buffer.from(await pdf.arrayBuffer());
+    const bytes = Buffer.from(await obj.arrayBuffer());
+    const contentType = file.endsWith('.zip') ? 'application/zip' : 'application/pdf';
     return new NextResponse(new Uint8Array(bytes), {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${PACK_FILENAME}"`,
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${file}"`,
         'Content-Length': String(bytes.length),
         'Cache-Control': 'no-store',
       },

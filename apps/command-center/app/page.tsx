@@ -11,7 +11,9 @@ import {
   RefreshCw,
   Server,
   ShieldCheck,
+  Zap,
 } from 'lucide-react';
+import { PLANS, PLAN_IDS, type PlanId } from '@/lib/plans';
 
 declare global {
   interface Window {
@@ -20,7 +22,6 @@ declare global {
 }
 
 const PRODUCT_NAME = 'Developer Prompt & Workflow Pack';
-const PRODUCT_PRICE_PAISE = 34900; // ₹349
 
 const features = [
   {
@@ -67,23 +68,26 @@ const pricingPoints = [
 export default function SellingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('combo');
+  const [delivery, setDelivery] = useState<{ token: string; files: { file: string; label: string }[] } | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const plan = PLANS[selectedPlan];
 
   async function handleBuy(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
+    setDelivery(null);
 
     try {
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: PRODUCT_PRICE_PAISE,
-          planName: PRODUCT_NAME,
+          planId: selectedPlan,
           currency: 'INR',
           customerEmail: email,
         }),
@@ -98,8 +102,8 @@ export default function SellingPage() {
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: PRODUCT_NAME,
-        description: '₹349 — one-time payment',
+        name: plan.label,
+        description: `₹${orderData.amount / 100} — one-time payment`,
         order_id: orderData.order_id,
         handler: async function (response: any) {
           try {
@@ -110,13 +114,13 @@ export default function SellingPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                planName: PRODUCT_NAME,
+                planId: selectedPlan,
                 customerEmail: email,
               }),
             });
             const verifyData = await verifyRes.json();
             if (verifyData.success && verifyData.token) {
-              setDownloadUrl(`/api/download?token=${verifyData.token}`);
+              setDelivery({ token: verifyData.token, files: verifyData.files || [] });
             } else {
               setSuccessMsg(
                 `Payment received (ID: ${response.razorpay_payment_id}). Contact us if your download doesn't appear — we'll fix it fast.`
@@ -189,7 +193,7 @@ export default function SellingPage() {
           </div>
 
           <p className="mt-4 text-xs text-neutral-500">
-            ₹349 one-time · Not a course · No fluff · Instant delivery
+            ₹299 per pack · ₹499 for both · One-time · Instant delivery
           </p>
         </section>
 
@@ -222,25 +226,54 @@ export default function SellingPage() {
 
         {/* ============ PRICING / CHECKOUT ============ */}
         <section id="pricing" className="scroll-mt-24 pb-24">
-          <div className="mx-auto max-w-md">
-            <div className="rounded-2xl border border-white/15 bg-white/[0.03] p-8 shadow-[0_0_60px_rgba(255,255,255,0.04)]">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold tracking-tight">{PRODUCT_NAME}</h2>
-                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-neutral-300">
-                  Launch price
-                </span>
-              </div>
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Pick your pack</h2>
+              <p className="mt-3 text-neutral-400">One-time payment. No subscription. Instant delivery.</p>
+            </div>
 
-              <div className="mt-6 flex items-baseline gap-3">
-                <span className="text-5xl font-semibold tracking-tight">₹349</span>
-                <span className="text-lg text-neutral-500 line-through">₹699</span>
-                <span className="text-sm text-neutral-500">≈ $4 USD</span>
-              </div>
-              <p className="mt-1.5 text-sm text-neutral-500">
-                One-time payment. No subscription. Ever.
-              </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {PLAN_IDS.map((planId) => {
+                const p = PLANS[planId];
+                const active = selectedPlan === planId;
+                const isCombo = planId === 'combo';
+                return (
+                  <button
+                    key={planId}
+                    type="button"
+                    onClick={() => setSelectedPlan(planId)}
+                    className={`relative rounded-2xl border p-6 text-left transition ${
+                      active
+                        ? 'border-white/40 bg-white/[0.06] shadow-[0_0_40px_rgba(255,255,255,0.05)]'
+                        : 'border-white/10 bg-white/[0.02] hover:border-white/25'
+                    }`}
+                  >
+                    {isCombo && (
+                      <span className="absolute -top-2.5 right-4 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+                        <Zap className="h-3 w-3" aria-hidden="true" /> Best value
+                      </span>
+                    )}
+                    <h3 className="text-sm font-semibold tracking-tight">{p.shortLabel}</h3>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-semibold tracking-tight">₹{p.price / 100}</span>
+                      {isCombo && (
+                        <span className="text-sm text-neutral-500 line-through">₹598</span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-neutral-400">{p.blurb}</p>
+                    <span className={`mt-4 inline-flex items-center gap-1.5 text-xs font-medium ${active ? 'text-amber-300' : 'text-neutral-500'}`}>
+                      <span className={`h-3.5 w-3.5 rounded-full border ${active ? 'border-amber-300' : 'border-neutral-600'}`}>
+                        {active && <span className="block h-full w-full rounded-full bg-amber-300" />}
+                      </span>
+                      {active ? 'Selected' : 'Select'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-              <ul className="mt-8 space-y-3">
+            <div className="mx-auto mt-6 max-w-md rounded-2xl border border-white/15 bg-white/[0.03] p-8 shadow-[0_0_60px_rgba(255,255,255,0.04)]">
+              <ul className="space-y-3">
                 {pricingPoints.map((point) => (
                   <li key={point} className="flex items-start gap-3 text-sm text-neutral-300">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-100" aria-hidden="true" />
@@ -253,7 +286,7 @@ export default function SellingPage() {
                 <input
                   type="email"
                   required
-                  placeholder="you@email.com — where we send the pack"
+                  placeholder="you@email.com — for delivery"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-white/30 focus:outline-none"
@@ -264,23 +297,28 @@ export default function SellingPage() {
                   disabled={loading}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:opacity-60"
                 >
-                  {loading ? 'Opening secure checkout...' : `Get the Pack Now — ₹349`}
+                  {loading ? 'Opening secure checkout...' : `Get ${plan.shortLabel} — ₹${plan.price / 100}`}
                   {!loading && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </form>
 
-              {downloadUrl && (
+              {delivery && delivery.files.length > 0 && (
                 <div className="mt-4 rounded-lg border border-emerald-700/50 bg-emerald-950/60 p-4 text-center">
-                  <p className="text-xs text-emerald-300">Payment verified. Your pack is ready.</p>
-                  <a
-                    href={downloadUrl}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400"
-                  >
-                    Download the pack
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </a>
+                  <p className="text-xs text-emerald-300">Payment verified. Your files are ready.</p>
+                  <div className="mt-3 flex flex-col gap-2">
+                    {delivery.files.map((d) => (
+                      <a
+                        key={d.file}
+                        href={`/api/download?token=${delivery.token}&file=${encodeURIComponent(d.file)}`}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400"
+                      >
+                        Download {d.label}
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    ))}
+                  </div>
                   <p className="mt-2 text-[11px] text-emerald-400/80">
-                    Keep this page — the link stays valid so you can re-download anytime.
+                    Keep this page — the links stay valid so you can re-download anytime.
                   </p>
                 </div>
               )}
@@ -298,8 +336,7 @@ export default function SellingPage() {
               )}
 
               <p className="mt-4 text-center text-xs text-neutral-500">
-                If one prompt doesn&apos;t save you a debugging session in the first week, get a
-                full refund.
+                If a pack doesn&apos;t save you time in the first week, get a full refund.
               </p>
             </div>
           </div>

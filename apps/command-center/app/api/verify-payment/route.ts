@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getPlan } from '@/lib/plans';
 
 async function storeOrder(payload: {
   order_id: string;
   payment_id: string;
   email?: string;
   token: string;
+  plan?: string;
 }): Promise<boolean> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -24,6 +26,7 @@ async function storeOrder(payload: {
         payment_id: payload.payment_id,
         email: payload.email ?? null,
         token: payload.token,
+        plan: payload.plan ?? null,
       }),
     });
     return res.ok;
@@ -39,9 +42,10 @@ export async function POST(request: Request) {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      planName = 'Developer Prompt & Workflow Pack',
+      planId = 'prompt-pack',
       customerEmail,
     } = await request.json();
+    const plan = getPlan(planId) || getPlan('prompt-pack')!;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json({ success: false, error: 'Missing required Razorpay payment signature verification fields' }, { status: 400 });
@@ -68,6 +72,7 @@ export async function POST(request: Request) {
       payment_id: razorpay_payment_id,
       email: customerEmail,
       token,
+      plan: planId,
     });
 
     if (!stored) {
@@ -79,7 +84,9 @@ export async function POST(request: Request) {
       message: 'Payment verified successfully!',
       payment_id: razorpay_payment_id,
       order_id: razorpay_order_id,
-      planName,
+      planId,
+      planName: plan.label,
+      files: plan.files.map((f) => ({ file: f, label: plan.fileLabels[f] })),
       token: stored ? token : null,
       deliveryStatus: stored ? 'ready' : 'error',
     });
